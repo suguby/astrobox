@@ -5,48 +5,57 @@ import math
 import random
 
 from robogame_engine import GameObject, Scene
-from robogame_engine.constants import ROTATE_FLIP_VERTICAL, ROTATE_FLIP_BOTH
+from robogame_engine.constants import ROTATE_FLIP_BOTH, ROTATE_TURNING
 from robogame_engine.geometry import Point
 from robogame_engine.states import StateMoving
 from robogame_engine.theme import theme
 
+from .cargo_box import CargoBox
+
 
 class Dron(GameObject):
-    _MAX_HONEY = 100
-    _sprite_filename = 'bee.png'
-    rotate_mode = ROTATE_FLIP_VERTICAL
+    __MAX_ELERIUM = 100
+    rotate_mode = ROTATE_TURNING
     radius = 44
     _part_of_team = True
-    __my_beehive = None
+    __my_mathership = None
     _dead = False
 
-    def __init__(self, pos=None):
-        super(Bee, self).__init__(pos=self.my_beehive.coord)
-        self.set_inital_honey(loaded=0, maximum=self._MAX_HONEY)
+    def __init__(self):
+        super(Dron, self).__init__(pos=self.my_mathership.coord)
+        self.cargo = CargoBox(initial_cargo=0, maximum_cargo=self.__MAX_ELERIUM)
         self._objects_holder = self._scene
-        self._health = theme.MAX_HEALTH
+        self.__health = theme.MAX_HEALTH
 
     @property
     def sprite_filename(self):
-        return 'bee-{}.png'.format(self.team)
+        return 'dron_{}.png'.format(self.team)
 
     @property
-    def my_beehive(self):
-        if self.__my_beehive is None:
+    def my_mathership(self):
+        if self.__my_mathership is None:
             try:
-                self.__my_beehive = self._scene.get_beehive(team=self.team)
+                self.__my_mathership = self._scene.get_beehive(team=self.team)
             except IndexError:
-                raise Exception("No beehive for {} - check beehives_count!".format(self.__class__.__name__))
-        return self.__my_beehive
+                raise Exception("No mathership for {} - check matherships_count!".format(self.__class__.__name__))
+        return self.__my_mathership
+
+    @property
+    def meter_1(self):
+        return self.cargo.meter
 
     @property
     def meter_2(self):
-        return float(self._health) / theme.MAX_HEALTH
+        return float(self.__health) / theme.MAX_HEALTH
+
+    @property
+    def is_alive(self):
+        return self.__health > 0
 
     def game_step(self):
-        super(Bee, self).game_step()
-        if not self._dead and self._health < theme.MAX_HEALTH:
-            self._health += theme.HEALTH_TOP_UP_SPEED
+        super(Dron, self).game_step()
+        if self.is_alive and self.__health < theme.MAX_HEALTH:
+            self.__health += theme.HEALTH_TOP_UP_SPEED
         self._update(is_moving=isinstance(self.state, StateMoving))
 
     def on_stop_at_target(self, target):
@@ -64,61 +73,70 @@ class Dron(GameObject):
     def on_stop_at_point(self, target):
         pass
 
-    def on_stop_at_flower(self, flower):
+    def on_stop_at_asteriod(self, asteriod):
         pass
 
-    def on_stop_at_beehive(self, beehive):
+    def on_stop_at_mathership(self, mathership):
         pass
 
-    def sting(self, other):
-        """
-        Укусить другую пчелу
-        """
-        if self._dead:
-            return
-        if isinstance(other, Bee):
-            other.stung(self, self.__reduce_health)
+    # def sting(self, other):
+    #     """
+    #     Укусить другую пчелу
+    #     """
+    #     if self._dead:
+    #         return
+    #     if isinstance(other, Bee):
+    #         other.stung(self, self.__reduce_health)
+    #
+    # def stung(self, other, kickback):
+    #     """
+    #     Принять укус, если кусающий близко.
+    #     Здоровье кусающего тоже уменьшается через kickback
+    #     """
+    #     if self.distance_to(other) <= self.radius:
+    #         try:
+    #             kickback()
+    #             self.__reduce_health()
+    #         except TypeError:
+    #             # flashback не может быть вызвана
+    #             pass
 
-    def stung(self, other, kickback):
-        """
-        Принять укус, если кусающий близко.
-        Здоровье кусающего тоже уменьшается через kickback
-        """
-        if self.distance_to(other) <= self.radius:
-            try:
-                kickback()
-                self.__reduce_health()
-            except TypeError:
-                # flashback не может быть вызвана
-                pass
-
-    def __reduce_health(self):
-        if self.distance_to(self.my_beehive) > theme.BEEHIVE_SAFE_DISTANCE:
-            self._health -= theme.STING_POWER
-            if self._health < 0:
-                self.__die()
-
-    def __die(self):
-        self.rotate_mode = ROTATE_FLIP_BOTH
-        self.move_at(Point(x=self.x + random.randint(-20, 20), y=40 + random.randint(-10, 20)))
-        self._dead = True
-
-    @property
-    def dead(self):
-        return self._dead
+    # def __reduce_health(self):
+    #     if self.distance_to(self.my_beehive) > theme.BEEHIVE_SAFE_DISTANCE:
+    #         self._health -= theme.STING_POWER
+    #         if self._health < 0:
+    #             self.__die()
+    #
+    # def __die(self):
+    #     self.rotate_mode = ROTATE_FLIP_BOTH
+    #     self.move_at(Point(x=self.x + random.randint(-20, 20), y=40 + random.randint(-10, 20)))
+    #     self._dead = True
 
     def move_at(self, target, speed=None):
-        if self._dead:
+        if not self.is_alive:
             return
-        super(Bee, self).move_at(target, speed)
+        super(Dron, self).move_at(target, speed)
 
     def turn_to(self, target):
-        if self._dead:
+        if not self.is_alive:
             return
-        super(Bee, self).turn_to(target)
+        super(Dron, self).turn_to(target)
+
+    def load_elerium_from(self, source):
+        if hasattr(source, 'cargo_box'):
+            self.cargo.load_from(source=source.cargo_box)
+        else:
+            raise Exception("Source object {} hasn't cargo_box!".format(source))
+
+    def unload_elerium_to(self, target):
+        if hasattr(target, 'cargo_box'):
+            self.cargo.load_from(source=target.cargo_box)
+        else:
+            raise Exception("Target object {} hasn't cargo_box!".format(target))
 
 
-class Flower(HoneyHolder, GameObject):
+
+class Asteriod(GameObject):
     radius = 50
     selectable = False
     _MIN_HONEY = 100
@@ -126,7 +144,7 @@ class Flower(HoneyHolder, GameObject):
     counter_attrs = dict(size=16, position=(43, 45), color=(128, 128, 128))
 
     def __init__(self, pos, max_honey=None):
-        super(Flower, self).__init__(pos=pos)
+        super(Asteriod, self).__init__(pos=pos)
         if max_honey is None:
             max_honey = random.randint(self._MIN_HONEY, self._MAX_HONEY)
         self.set_inital_honey(loaded=max_honey, maximum=max_honey)
@@ -139,13 +157,13 @@ class Flower(HoneyHolder, GameObject):
         return self.honey
 
 
-class BeeHive(HoneyHolder, GameObject):
+class Mathership(GameObject):
     radius = 75
     selectable = False
     counter_attrs = dict(size=22, position=(60, 92), color=(255, 255, 0))
 
     def __init__(self, pos, max_honey):
-        super(BeeHive, self).__init__(pos=pos)
+        super(Mathership, self).__init__(pos=pos)
         self.set_inital_honey(loaded=0, maximum=max_honey)
 
     @property
@@ -173,7 +191,7 @@ class Rect(object):
         return "{}x{} ({}, {})".format(self.w, self.h, self.x, self.y)
 
 
-class Beegarden(Scene):
+class StarField(Scene):
     check_collisions = False
     _FLOWER_JITTER = 0.7
     _HONEY_SPEED_FACTOR = 0.02
@@ -188,7 +206,6 @@ class Beegarden(Scene):
         honey_speed = int(theme.MAX_SPEED * self._HONEY_SPEED_FACTOR)
         if honey_speed < 1:
             honey_speed = 1
-        HoneyHolder._honey_speed = honey_speed
 
     def _place_flowers_and_beehives(self, flowers_count, beehives_count):
         if beehives_count > theme.TEAMS_COUNT:
