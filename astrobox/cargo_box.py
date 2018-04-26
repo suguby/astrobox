@@ -53,7 +53,8 @@ class CargoBox(CanLogging):
         else:
             raise Exception('Target for CargoBox can be only CargoBox!')
 
-    def near(self, target):
+    def at_load_distance(self, target):
+        # TODO можно переопределить - дыра?
         raise NotImplementedError()
 
     def on_load_complete(self):
@@ -65,7 +66,7 @@ class CargoBox(CanLogging):
     def _update(self):
         if self.__cargo_jack is None or self.__cargo_state == 'hold':
             return
-        if not self.near(self.__cargo_jack):
+        if not self.at_load_distance(self.__cargo_jack):
             self.__stop_transfer()
         elif self.__cargo_state == 'unloading':
             if min(self.__payload, self.__cargo_jack.free_space) == 0:

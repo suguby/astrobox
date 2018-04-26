@@ -60,12 +60,12 @@ class Dron(GameObject):
 
     def on_stop_at_target(self, target):
         for flower in self.flowers:
-            if flower.near(target):
+            if flower.at_load_distance(target):
                 self.on_stop_at_flower(flower)
                 return
         else:
             for bh in self.beehives:
-                if bh.near(target):
+                if bh.at_load_distance(target):
                     self.on_stop_at_beehive(bh)
                     return
         self.on_stop_at_point(target)
