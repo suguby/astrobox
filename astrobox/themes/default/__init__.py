@@ -21,4 +21,8 @@ STING_POWER = 50
 HEALTH_TOP_UP_SPEED = 0.5
 BEEHIVE_SAFE_DISTANCE = 200
 
-# See robogame_engine.constants
+LOAD_SPEED = 1
+LOAD_DISTANCE = 10
+
+# For more see robogame_engine.constants
+

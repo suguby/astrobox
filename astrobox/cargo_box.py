@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 
 from robogame_engine.utils import CanLogging
+from robogame_engine.theme import theme
 
 
 class CargoBox(CanLogging):
     """Класс кузова для перевозки и хранения элериума"""
-    __load_speed = 1
+    __load_speed = theme.LOAD_SPEED
+    __load_distance = theme.LOAD_DISTANCE
     __payload = 0
     __max_payload = 0
     # TODO подумать держать __cargo_source и __cargo_target, без стейта,
     # TODO тогда можно трансферить елериум - сразу и загружать и разгружать
     __cargo_jack = None
     __cargo_state = 'hold'
+    coord = None  # переопределяется в потомках
 
     def __init__(self, initial_cargo, maximum_cargo):
         self.__payload = initial_cargo
@@ -53,10 +56,6 @@ class CargoBox(CanLogging):
         else:
             raise Exception('Target for CargoBox can be only CargoBox!')
 
-    def at_load_distance(self, target):
-        # TODO можно переопределить - дыра?
-        raise NotImplementedError()
-
     def on_load_complete(self):
         pass
 
@@ -66,7 +65,7 @@ class CargoBox(CanLogging):
     def _update(self):
         if self.__cargo_jack is None or self.__cargo_state == 'hold':
             return
-        if not self.at_load_distance(self.__cargo_jack):
+        if not self.__at_load_distance(self.__cargo_jack):
             self.__stop_transfer()
         elif self.__cargo_state == 'unloading':
             if min(self.__payload, self.__cargo_jack.free_space) == 0:
@@ -86,6 +85,10 @@ class CargoBox(CanLogging):
                     self.__put_cagro(batch)
                 else:
                     self.__end_exchange(event=self.on_load_complete)
+
+    def __at_load_distance(self, other):
+        distance = ((self.coord.x - other.coord.x) ** 2 + (self.coord.y - other.coord.y) ** 2) ** .5
+        return distance < self.__load_distance
 
     def __end_exchange(self, event):
         self.__cargo_jack = None
