@@ -1,4 +1,4 @@
-beegarden
+AstroBox
 =========
 
-Beegarden game for programmers
+AstroBox game for programmers

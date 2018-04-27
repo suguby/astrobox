@@ -6,8 +6,8 @@ from robogame_engine.theme import theme
 
 class CargoBox(CanLogging):
     """Класс кузова для перевозки и хранения элериума"""
-    __load_speed = theme.LOAD_SPEED
-    __load_distance = theme.LOAD_DISTANCE
+    __load_speed = None
+    __load_distance = None
     __payload = 0
     __max_payload = 0
     # TODO подумать держать __cargo_source и __cargo_target, без стейта,
@@ -21,6 +21,9 @@ class CargoBox(CanLogging):
         if maximum_cargo <= 0:
             raise Exception("max_payload must be positive!")
         self.__max_payload = maximum_cargo
+        if CargoBox.__load_speed is None:
+            CargoBox.__load_speed = theme.LOAD_SPEED
+            CargoBox.__load_distance = theme.LOAD_DISTANCE
 
     @property
     def payload(self):
@@ -62,7 +65,7 @@ class CargoBox(CanLogging):
     def on_unload_complete(self):
         pass
 
-    def _update(self):
+    def game_step(self):
         if self.__cargo_jack is None or self.__cargo_state == 'hold':
             return
         if not self.__at_load_distance(self.__cargo_jack):
@@ -87,6 +90,7 @@ class CargoBox(CanLogging):
                     self.__end_exchange(event=self.on_load_complete)
 
     def __at_load_distance(self, other):
+        # TODO тут еще подключить радиус обьекта, что бы можно было с края астероида выкачивать
         distance = ((self.coord.x - other.coord.x) ** 2 + (self.coord.y - other.coord.y) ** 2) ** .5
         return distance < self.__load_distance
 
