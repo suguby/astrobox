@@ -25,6 +25,9 @@ class CargoBox(CanLogging):
             CargoBox.__load_speed = theme.LOAD_SPEED
             CargoBox.__load_distance = theme.LOAD_DISTANCE
 
+    def __str__(self):
+        return '{} payload {}/{}'.format(self.__class__.__name__, self.__payload, self.__max_payload)
+
     @property
     def payload(self):
         return self.__payload
@@ -71,23 +74,27 @@ class CargoBox(CanLogging):
         if not self.__at_load_distance(self.__cargo_jack):
             self.__stop_transfer()
         elif self.__cargo_state == 'unloading':
-            if min(self.__payload, self.__cargo_jack.free_space) == 0:
-                self.__end_exchange(event=self.on_unload_complete)
-            else:
-                batch = self.__get_cargo()
-                if batch:
-                    self.__cargo_jack.__put_cagro(batch)
-                else:
-                    self.__end_exchange(event=self.on_unload_complete)
+            self.__proceed_unloading()
         elif self.__cargo_state == 'loading':
-            if min(self.free_space, self.__cargo_jack.__payload) == 0:
-                self.__end_exchange(event=self.on_load_complete)
-            else:
-                batch = self.__cargo_jack.__get_cargo()
-                if batch:
-                    self.__put_cagro(batch)
-                else:
-                    self.__end_exchange(event=self.on_load_complete)
+            self.__proceed_loading()
+
+    def __proceed_loading(self):
+        if self.is_full or self.__cargo_jack.is_empty:
+            self.__end_exchange(event=self.on_load_complete)
+            return
+        batch = self.__cargo_jack.__get_cargo(for_target=self)
+        self.__put_cagro(batch)
+        if self.is_full or self.__cargo_jack.is_empty:
+            self.__end_exchange(event=self.on_load_complete)
+
+    def __proceed_unloading(self):
+        if self.is_empty or self.__cargo_jack.is_full:
+            self.__end_exchange(event=self.on_unload_complete)
+            return
+        batch = self.__get_cargo(for_target=self.__cargo_jack)
+        self.__cargo_jack.__put_cagro(batch)
+        if self.is_empty or self.__cargo_jack.is_full:
+            self.__end_exchange(event=self.on_unload_complete)
 
     def __at_load_distance(self, other):
         # TODO тут еще подключить радиус обьекта, что бы можно было с края астероида выкачивать
@@ -95,8 +102,7 @@ class CargoBox(CanLogging):
         return distance < self.__load_distance
 
     def __end_exchange(self, event):
-        self.__cargo_jack = None
-        self.__cargo_state = 'hold'
+        self.__stop_transfer()
         try:
             event()
         except Exception as exc:
@@ -106,8 +112,8 @@ class CargoBox(CanLogging):
         self.__cargo_jack = None
         self.__cargo_state = 'hold'
 
-    def __get_cargo(self):
-        batch = min(self.__payload, self.__cargo_jack.free_space, self.__load_speed)
+    def __get_cargo(self, for_target):
+        batch = min(self.__payload, for_target.free_space, self.__load_speed)
         self.__payload -= batch
         return batch
 

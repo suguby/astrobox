@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-"""Тестовая игра"""
 import random
 
 from robogame_engine.theme import theme
