@@ -154,20 +154,20 @@ class Next2Dron(GreedyDron):
 if __name__ == '__main__':
     star_field = StarField(
         name="Space war",
-        speed=5,
+        speed=1,
         theme_mod_path='astrobox.themes.default',
-        # field=(800, 600),
-        asteroids_count=10,
-        matherships_count=1,
+        field=(1600, 800),
+        asteroids_count=20,
+        matherships_count=4,
     )
 
-    count = 10
-    drones = [WorkerDron(coord=Point(400, 400)) for i in range(count)]
-    # drones_2 = [GreedyDron() for i in range(count)]
-    # drones_3 = [HunterDron() for i in range(count)]
-    # drones_4 = [Next2Dron() for i in range(count)]
+    count = 2
+    drones = [WorkerDron() for i in range(count)]
+    drones_2 = [GreedyDron() for i in range(count)]
+    drones_3 = [HunterDron() for i in range(count)]
+    drones_4 = [Next2Dron() for i in range(count)]
 
-    # dron = WorkerDron()
+    # dron = Dron()
     # dron.move_at(Point(1000, 1000))  # проверка на выход за границы экрана
 
     star_field.go()
