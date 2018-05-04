@@ -2,7 +2,7 @@
 import math
 import random
 
-from astrobox.core import MatherShip, Asteroid
+from astrobox.core import (MatherShip, Asteroid, Dron)
 from robogame_engine import Scene
 from robogame_engine.geometry import Point
 from robogame_engine.theme import theme
@@ -130,5 +130,13 @@ class StarField(Scene):
         return self.__matherships[team - 1]
 
     @property
-    def radar_marks(self):
-        return [obj.image for obj in self.objects]
+    def drones(self):
+        return self.get_objects_by_type(Dron)
+
+    @property
+    def asteroids(self):
+        return self.get_objects_by_type(Asteroid)
+
+    @property
+    def matherships(self):
+        return self.get_objects_by_type(MatherShip)

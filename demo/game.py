@@ -57,7 +57,7 @@ class WorkerDron(Dron):
     def on_stop_at_mathership(self, mathership):
         self.unload_to(mathership)
 
-    def on_elerium_unloaded(self):
+    def on_unload_complete(self):
         self.go_next_asteriod()
 
 
@@ -142,9 +142,9 @@ class HunterDron(GreedyDron):
         HunterDron.to_hunt()
         super(HunterDron, self).on_load_complete()
 
-    def on_elerium_unloaded(self):
+    def on_unload_complete(self):
         HunterDron.to_hunt()
-        super(HunterDron, self).on_elerium_unloaded()
+        super(HunterDron, self).on_unload_complete()
 
 
 class Next2Dron(GreedyDron):
@@ -154,7 +154,7 @@ class Next2Dron(GreedyDron):
 if __name__ == '__main__':
     star_field = StarField(
         name="Space war",
-        speed=2,
+        speed=1,
         theme_mod_path='astrobox.themes.default',
         # field=(800, 600),
         asteroids_count=20,

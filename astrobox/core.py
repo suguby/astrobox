@@ -10,12 +10,7 @@ from .cargo_box import CargoBox
 
 
 class AstroUnit(GameObject, CargoBox):
-
-    @property
-    def image(self):
-        image = super(AstroUnit, self).image
-        image.payload = self.payload
-        return image
+    pass
 
 
 class Dron(AstroUnit):
@@ -45,10 +40,6 @@ class Dron(AstroUnit):
         return self.__my_mathership
 
     @property
-    def radar_marks(self):
-        return self.scene.radar_marks
-
-    @property
     def meter_1(self):
         return self.fullness
 
@@ -61,12 +52,16 @@ class Dron(AstroUnit):
         return self.__health > 0
 
     @property
+    def drones(self):
+        return self.scene.drones
+
+    @property
     def asteroids(self):
-        return [obj for obj in self.radar_marks if obj.kind == 'Asteroid']
+        return self.scene.asteroids
 
     @property
     def matherships(self):
-        return [obj for obj in self.radar_marks if obj.kind == 'MatherShip']
+        return self.scene.matherships
 
     def game_step(self):
         super(Dron, self).game_step()
