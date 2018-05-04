@@ -123,7 +123,7 @@ class StarField(Scene):
                 pos = Point(90, theme.FIELD_HEIGHT - 75)
             else:
                 pos = Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
-            mathership = MatherShip(coord=pos, max_elerium=max_elerium)
+            mathership = MatherShip(coord=pos, max_elerium=max_elerium, team=team+1)
             self.__matherships.append(mathership)
 
     def get_mathership(self, team):

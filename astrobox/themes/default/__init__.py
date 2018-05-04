@@ -4,7 +4,7 @@ import os
 
 PICTURES_PATH = os.path.dirname(__file__)
 
-BACKGROUND_COLOR = (85, 107, 47)
+BACKGROUND_IMAGE = os.path.join(PICTURES_PATH, 'background.png')
 
 FIELD_WIDTH = 1200
 FIELD_HEIGHT = 600

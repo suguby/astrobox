@@ -137,7 +137,7 @@ class Dron(AstroUnit):
 class Asteroid(AstroUnit):
     radius = 50
     selectable = False
-    counter_attrs = dict(size=16, position=(43, 45), color=(128, 128, 128))
+    counter_attrs = dict(size=16, position=(43, 45), color=(255, 255, 255))
 
     def __init__(self, coord, max_elerium=None):
         super(Asteroid, self).__init__(coord=coord)
@@ -163,15 +163,14 @@ class MatherShip(AstroUnit):
     selectable = False
     counter_attrs = dict(size=22, position=(60, 92), color=(255, 255, 0))
 
-    def __init__(self, coord, max_elerium):
+    def __init__(self, coord, max_elerium, team=1):
         super(MatherShip, self).__init__(coord=coord)
         CargoBox.__init__(self, initial_cargo=0, maximum_cargo=max_elerium)
+        self.__team = team
 
     @property
     def sprite_filename(self):
-        # TODO тут надо допилить что бы матка была тоже в команде? иначе как спрайт рендерить?
-        # return 'mathership_{}.png'.format(self.team)
-        return 'mathership_1.png'
+        return 'mathership_{}.png'.format(self.__team)
 
     @property
     def counter(self):
