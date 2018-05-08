@@ -166,8 +166,8 @@ if __name__ == '__main__':
 
     count = 3
     drones = [WorkerDron() for i in range(count)]
-    # drones_2 = [GreedyDron() for i in range(count)]
-    # drones_3 = [HunterDron() for i in range(count)]
+    drones_2 = [GreedyDron() for i in range(count)]
+    drones_3 = [HunterDron() for i in range(count)]
     drones_4 = [RunnerDron() for i in range(count)]
 
     star_field.go()
