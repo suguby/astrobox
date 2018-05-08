@@ -16,12 +16,13 @@ class AstroUnit(GameObject, CargoBox):
 class Dron(AstroUnit):
     rotate_mode = ROTATE_TURNING
     radius = 44
-    _part_of_team = True
+    auto_team = True
     __my_mathership = None
     _dead = False
+    layer = 2
 
     def __init__(self, coord=None):
-        super(Dron, self).__init__(coord=self.my_mathership.coord.copy() if coord is None else coord)
+        super(Dron, self).__init__(coord=coord)
         CargoBox.__init__(self, initial_cargo=0, maximum_cargo=theme.MAX_DRON_ELERIUM)
         self._objects_holder = self.scene
         self.__health = theme.MAX_HEALTH
@@ -137,7 +138,7 @@ class Dron(AstroUnit):
 class Asteroid(AstroUnit):
     radius = 50
     selectable = False
-    counter_attrs = dict(size=16, position=(20, 20), color=(255, 255, 255))
+    counter_attrs = dict(size=16, position=(0, 0), color=(255, 255, 255))
 
     def __init__(self, coord, max_elerium=None):
         super(Asteroid, self).__init__(coord=coord)

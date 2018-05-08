@@ -38,10 +38,9 @@ class StarField(Scene):
         self.__asteroids = []
         super(StarField, self).__init__(*args, **kwargs)
 
-    def prepare(self, asteroids_count=5, matherships_count=1):
+    def prepare(self, asteroids_count=5):
         self._fill_space(
             asteroids_count=asteroids_count,
-            matherships_count=matherships_count,
         )
         self._objects_holder = self
         # TODO посмотреть зачем корректировалась скорость перекачки
@@ -50,15 +49,12 @@ class StarField(Scene):
         #     honey_speed = 1
         # CargoBox.__load_speed = honey_speed
 
-    def _fill_space(self, asteroids_count, matherships_count):
-        if matherships_count > theme.TEAMS_COUNT:
-            raise Exception('Only {} matherships!'.format(theme.TEAMS_COUNT))
-
+    def _fill_space(self, asteroids_count):
         field = Rect(w=theme.FIELD_WIDTH, h=theme.FIELD_HEIGHT)
         field.reduce(dw=MatherShip.radius * 2, dh=MatherShip.radius * 2)
-        if matherships_count >= 2:
+        if self.teams_count >= 2:
             field.reduce(dw=MatherShip.radius * 2)
-        if matherships_count >= 3:
+        if self.teams_count >= 3:
             field.reduce(dh=MatherShip.radius * 2)
         if field.w < MatherShip.radius or field.h < MatherShip.radius:
             raise Exception("Too little field...")
@@ -109,21 +105,25 @@ class StarField(Scene):
             self.__asteroids.append(asteroid)
             max_elerium += asteroid.payload
             i += 1
-        max_elerium /= float(matherships_count)
+        max_elerium /= float(self.teams_count)
         max_elerium = int(round((max_elerium / 1000.0) * 1.3)) * 1000
         if max_elerium < 1000:
             max_elerium = 1000
-        for team in range(matherships_count):
-            # TODO вычислять от размера игрового поля и радиуса матки
-            if team == 0:
+        for team, cls in enumerate(self.teams):
+            team += 1
+            # TODO вычислять координаты от размера игрового поля и радиуса матки
+            if team == 1:
                 pos = Point(90, 75)
-            elif team == 1:
-                pos = Point(theme.FIELD_WIDTH - 90, 75)
             elif team == 2:
+                pos = Point(theme.FIELD_WIDTH - 90, 75)
+            elif team == 3:
                 pos = Point(90, theme.FIELD_HEIGHT - 75)
             else:
                 pos = Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
-            mathership = MatherShip(coord=pos, max_elerium=max_elerium, team=team+1)
+            mathership = MatherShip(coord=pos, max_elerium=max_elerium, team=team)
+            for dron in self.get_objects_by_type(cls):
+                dron.coord = pos.copy()
+                dron.set_team(team=team)
             self.__matherships.append(mathership)
 
     def get_mathership(self, team):

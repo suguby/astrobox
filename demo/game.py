@@ -91,7 +91,7 @@ class HunterDron(GreedyDron):
     @classmethod
     def to_hunt(cls):
         commander = cls._hunters[0]
-        drones = [dron for dron in commander.drons if not isinstance(dron, cls) and not dron.dead and dron.payload > 0]
+        drones = [dron for dron in commander.drones if not isinstance(dron, cls) and not dron.dead and dron.payload > 0]
         drones = [dron for dron in drones if dron.distance_to(dron.my_mathership.coord) > theme.MATHERSHIP_SAFE_DISTANCE]
         victim = None
         for dron in drones:
@@ -147,8 +147,12 @@ class HunterDron(GreedyDron):
         super(HunterDron, self).on_unload_complete()
 
 
-class Next2Dron(GreedyDron):
-    pass
+class RunnerDron(Dron):
+
+    def on_born(self):
+        x = 1000 + random.randint(0, 500) if self.coord.x < 300 else random.randint(0, 100)
+        y = 1000 + random.randint(0, 500) if self.coord.y < 300 else random.randint(0, 100)
+        self.move_at(Point(x, y))  # проверка на выход за границы экрана
 
 
 if __name__ == '__main__':
@@ -158,16 +162,12 @@ if __name__ == '__main__':
         theme_mod_path='astrobox.themes.default',
         field=(1600, 800),
         asteroids_count=20,
-        matherships_count=4,
     )
 
-    count = 2
+    count = 3
     drones = [WorkerDron() for i in range(count)]
-    drones_2 = [GreedyDron() for i in range(count)]
-    drones_3 = [HunterDron() for i in range(count)]
-    drones_4 = [Next2Dron() for i in range(count)]
-
-    # dron = Dron()
-    # dron.move_at(Point(1000, 1000))  # проверка на выход за границы экрана
+    # drones_2 = [GreedyDron() for i in range(count)]
+    # drones_3 = [HunterDron() for i in range(count)]
+    drones_4 = [RunnerDron() for i in range(count)]
 
     star_field.go()
