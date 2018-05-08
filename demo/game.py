@@ -159,7 +159,6 @@ if __name__ == '__main__':
     star_field = StarField(
         name="Space war",
         speed=1,
-        theme_mod_path='astrobox.themes.default',
         field=(1600, 800),
         asteroids_count=20,
     )

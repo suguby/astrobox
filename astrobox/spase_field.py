@@ -36,6 +36,8 @@ class StarField(Scene):
     def __init__(self, *args, **kwargs):
         self.__matherships = []
         self.__asteroids = []
+        if 'theme_mod_path' not in kwargs:
+            kwargs['theme_mod_path'] = 'astrobox.themes.default'
         super(StarField, self).__init__(*args, **kwargs)
 
     def prepare(self, asteroids_count=5):
