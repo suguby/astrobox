@@ -150,7 +150,13 @@ class Asteroid(AstroUnit):
 
     @property
     def sprite_filename(self):
-        return 'asteroids/{}.png'.format(self._sprite_num)
+        if self.fullness > .75:
+            return 'asteroids/1.png'
+        if self.fullness > .5:
+            return 'asteroids/2.png'
+        if self.fullness > .25:
+            return 'asteroids/3.png'
+        return 'asteroids/4.png'
 
     @property
     def counter(self):
