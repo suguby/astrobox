@@ -136,6 +136,7 @@ class Dron(AstroUnit):
 
 
 class Asteroid(AstroUnit):
+    rotate_mode = ROTATE_TURNING
     radius = 50
     selectable = False
     counter_attrs = dict(size=16, position=(0, 0), color=(255, 255, 255))
@@ -154,6 +155,12 @@ class Asteroid(AstroUnit):
     @property
     def counter(self):
         return self.payload
+
+    def on_born(self):
+        self.turn_to(self.direction + 90, speed=0.27)
+
+    def on_stop(self):
+        self.turn_to(self.direction + 90, speed=0.27)
 
 
 class MatherShip(AstroUnit):
