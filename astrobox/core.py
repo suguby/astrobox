@@ -142,21 +142,22 @@ class Asteroid(AstroUnit):
     counter_attrs = dict(size=16, position=(0, 0), color=(255, 255, 255))
 
     def __init__(self, coord, max_elerium=None):
-        super(Asteroid, self).__init__(coord=coord)
+        direction = random.randint(0, 360)
+        super(Asteroid, self).__init__(coord=coord, direction=direction)
         if max_elerium is None:
             max_elerium = random.randint(theme.MIN_ASTEROID_ELERIUM, theme.MAX_ASTEROID_ELERIUM)
         CargoBox.__init__(self, initial_cargo=max_elerium, maximum_cargo=max_elerium)
-        self._sprite_num = random.randint(1, 9)
+        self._sprite_num = 1
+        # TODO сделать разные картинки спрайтов, одинакового размера и рандомить от max_elerium
+        # self._sprite_num = random.randint(1, 9)
 
     @property
     def sprite_filename(self):
-        if self.fullness > .75:
-            return 'asteroids/1.png'
-        if self.fullness > .5:
-            return 'asteroids/2.png'
-        if self.fullness > .25:
-            return 'asteroids/3.png'
-        return 'asteroids/4.png'
+        return 'asteroids/{}.png'.format(self._sprite_num)
+
+    @property
+    def zoom(self):
+        return .4 + self.fullness * .6
 
     @property
     def counter(self):
