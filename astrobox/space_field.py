@@ -28,7 +28,7 @@ class Rect(object):
         return "{}x{} ({}, {})".format(self.w, self.h, self.x, self.y)
 
 
-class StarField(Scene):
+class SpaceField(Scene):
     check_collisions = False
     _CELL_JITTER = 0.7
     # _HONEY_SPEED_FACTOR = 0.02
@@ -38,7 +38,7 @@ class StarField(Scene):
         self.__asteroids = []
         if 'theme_mod_path' not in kwargs:
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
-        super(StarField, self).__init__(*args, **kwargs)
+        super(SpaceField, self).__init__(*args, **kwargs)
 
     def prepare(self, asteroids_count=5):
         self._fill_space(
@@ -122,7 +122,8 @@ class StarField(Scene):
                 pos = Point(90, theme.FIELD_HEIGHT - 75)
             else:
                 pos = Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
-            mathership = MatherShip(coord=pos, max_elerium=max_elerium, team=team)
+            mathership_class = getattr(cls, 'mathership_class', MatherShip)
+            mathership = mathership_class(coord=pos, max_elerium=max_elerium, team=team)
             for dron in self.get_objects_by_type(cls):
                 dron.coord = pos.copy()
                 dron.set_team(team=team)

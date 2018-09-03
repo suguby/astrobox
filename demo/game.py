@@ -4,7 +4,7 @@ import random
 from robogame_engine.theme import theme
 from robogame_engine.geometry import Point
 from astrobox.core import Dron
-from astrobox.spase_field import StarField
+from astrobox.space_field import SpaceField
 
 
 class WorkerDron(Dron):
@@ -156,7 +156,7 @@ class RunnerDron(Dron):
 
 
 if __name__ == '__main__':
-    star_field = StarField(
+    space_field = SpaceField(
         name="Space war",
         speed=1,
         field=(1600, 800),
@@ -169,4 +169,4 @@ if __name__ == '__main__':
     drones_3 = [HunterDron() for i in range(count)]
     drones_4 = [RunnerDron() for i in range(count)]
 
-    star_field.go()
+    space_field.go()
