@@ -146,7 +146,7 @@ class Asteroid(AstroUnit):
         super(Asteroid, self).__init__(coord=coord, direction=direction)
         if max_elerium is None:
             max_elerium = random.randint(theme.MIN_ASTEROID_ELERIUM, theme.MAX_ASTEROID_ELERIUM)
-        self._size = (max_elerium / theme.MIN_ASTEROID_ELERIUM) * .75
+        self._size = (max_elerium / theme.MIN_ASTEROID_ELERIUM) * .8
         CargoBox.__init__(self, initial_cargo=max_elerium, maximum_cargo=max_elerium)
         self._sprite_num = 1
         # TODO сделать разные картинки спрайтов, одинакового размера и рандомить
@@ -158,7 +158,7 @@ class Asteroid(AstroUnit):
 
     @property
     def zoom(self):
-        return (.4 + self.fullness * .6) * self._size
+        return .4 + self.fullness * .6 * self._size
 
     @property
     def counter(self):
