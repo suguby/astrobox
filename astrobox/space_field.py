@@ -107,8 +107,7 @@ class SpaceField(Scene):
             self.__asteroids.append(asteroid)
             max_elerium += asteroid.payload
             i += 1
-        max_elerium /= float(self.teams_count)
-        max_elerium = int(round((max_elerium / 1000.0) * 1.3)) * 1000
+        max_elerium = round(max_elerium * 1.5 / self.teams_count, -2)
         if max_elerium < 1000:
             max_elerium = 1000
         for team, cls in enumerate(self.teams):
