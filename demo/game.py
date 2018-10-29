@@ -3,6 +3,10 @@ import random
 
 from robogame_engine.theme import theme
 from robogame_engine.geometry import Point
+
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from astrobox.core import Dron
 from astrobox.space_field import SpaceField
 

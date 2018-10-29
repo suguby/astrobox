@@ -1,0 +1,174 @@
+# -*- coding: utf-8 -*-
+import math
+import random
+
+#from astrobox.core import (MotherShip, Asteroid, DronUnit)
+
+#from astrobox.units import (MotherShip, DroneUnit)
+#from astrobox.core import (Asteroid)
+
+from astrobox.units import (MotherShip, Asteroid, DroneUnit)
+
+import sys, os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from robogame_engine import Scene
+from robogame_engine.geometry import Point
+from robogame_engine.theme import theme
+
+
+class Rect(object):
+
+    def __init__(self, x=0, y=0, w=10, h=10):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+
+    def reduce(self, dw=0, dh=0):
+        self.w -= dw
+        self.h -= dh
+
+    def shift(self, dx=0, dy=0):
+        self.x += dx
+        self.y += dy
+
+    def __str__(self):
+        return "[{}]{}x{} ({}, {})".format(id(self), self.w, self.h, self.x, self.y)
+
+
+class SpaceField(Scene):
+    check_collisions = False
+    detect_collisions = True
+    _CELL_JITTER = 0.7
+    # _HONEY_SPEED_FACTOR = 0.02
+
+    def __init__(self, *args, **kwargs):
+        self.__motherships = []
+        self.__asteroids = []
+        self.__drones = []
+        #self.__team_drones = []
+        if 'theme_mod_path' not in kwargs:
+            kwargs['theme_mod_path'] = 'astrobox.themes.default'
+        #if 'team_drones' in kwargs:
+        #    self.__team_drones = kwargs.get('team_drones')
+        #    kwargs.pop('team_drones', None)
+        #if 'drones_per_team' in kwargs:
+        #    self.__drones_per_team = kwargs.get('drones_per_team')
+        #    kwargs.pop('drones_per_team', None)
+        super(SpaceField, self).__init__(*args, **kwargs)
+
+    def prepare(self, asteroids_count=5, team_drone_types=[]):
+        # initialize teams
+        #for t in self.__team_drones:
+        #    cls = self.get_team(t)
+        self._fill_space(
+            asteroids_count=asteroids_count,
+            team_drone_types=team_drone_types,
+        )
+        self._objects_holder = self
+        # TODO посмотреть зачем корректировалась скорость перекачки
+        # honey_speed = int(theme.MAX_SPEED * self._HONEY_SPEED_FACTOR)
+        # if honey_speed < 1:
+        #     honey_speed = 1
+        # CargoBox.__load_speed = honey_speed
+
+    def _get_team_pos(self, team):
+        if team == 1:
+            return Point(90, 75)
+        elif team == 2:
+            return Point(theme.FIELD_WIDTH - 90, 75)
+        elif team == 3:
+            return Point(90, theme.FIELD_HEIGHT - 75)
+        else:
+            return Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
+
+
+    def _fill_space(self, asteroids_count, team_drone_types):
+        field = Rect(w=theme.FIELD_WIDTH, h=theme.FIELD_HEIGHT)
+        field.reduce(dw=MotherShip.radius * 2, dh=MotherShip.radius * 2)
+        if self.teams_count >= 2:
+            field.reduce(dw=MotherShip.radius * 2)
+        #if self.teams_count >= 3:
+        #    field.reduce(dh=MotherShip.radius * 2)
+        if field.w < MotherShip.radius or field.h < MotherShip.radius:
+            raise Exception("Too little field...")
+        if theme.DEBUG:
+            print("Initial field", field)
+
+        cells_in_width = int(math.ceil(math.sqrt(float(field.w) / field.h * asteroids_count)))
+        cells_in_height = int(math.ceil(float(asteroids_count) / cells_in_width))
+        cells_count = cells_in_height * cells_in_width
+        if theme.DEBUG:
+            print("Cells count", cells_count, cells_in_width, cells_in_height)
+        if cells_count < asteroids_count:
+            print(u"Ну я не знаю...")
+
+        cell = Rect(w=int(field.w / cells_in_width), h=int(field.h / cells_in_height))
+
+        if theme.DEBUG:
+            print("Adjusted cell", cell)
+
+        cell_numbers = [i for i in range(cells_count)]
+
+        jit_box = Rect(w=int(cell.w * self._CELL_JITTER), h=int(cell.h * self._CELL_JITTER))
+        jit_box.shift(dx=(cell.w - jit_box.w) // 2, dy=(cell.h - jit_box.h) // 2)
+        if theme.DEBUG:
+            print("Jit box", jit_box)
+
+        field.w = cells_in_width * cell.w + jit_box.w
+        field.h = cells_in_height * cell.h + jit_box.h
+        if theme.DEBUG:
+            print("Adjusted field", field)
+
+        field.x = MotherShip.radius * 2
+        field.y = MotherShip.radius * 2
+        if theme.DEBUG:
+            print("Shifted field", field)
+
+        max_elerium = 0
+        for i in range(asteroids_count):
+            cell_number = random.choice(cell_numbers)
+            cell_numbers.remove(cell_number)
+            cell.x = (cell_number % cells_in_width) * cell.w
+            cell.y = (cell_number // cells_in_width) * cell.h
+            dx = random.randint(0, jit_box.w)
+            dy = random.randint(0, jit_box.h)
+            pos = Point(field.x + cell.x + dx, field.y + cell.y + dy)
+            asteroid = Asteroid(coord=pos)
+            self.__asteroids.append(asteroid)
+            max_elerium += asteroid.cargo.payload
+        max_elerium /= float(theme.TEAMS_COUNT)
+        max_elerium = int(round((max_elerium / 1000.0) * 1.3)) * 1000
+        if max_elerium < 1000:
+            max_elerium = 1000
+
+        for droneClass in team_drone_types:
+            team = self.get_team(droneClass)
+            pos = self._get_team_pos(team)
+            for i in range(theme.TEAM_DRONES_COUNT):
+                drone = droneClass(coord=pos.copy(), team=team)
+                self.__drones.append(drone)
+
+        for droneClass in team_drone_types:
+            team = self.get_team(droneClass)
+            # TODO вычислять координаты от размера игрового поля и радиуса матки
+            pos = self._get_team_pos(team)
+            mothership_class = getattr(droneClass, 'mothership_class', MotherShip)
+            mothership = mothership_class(coord=pos.copy(), max_payload=max_elerium, team=team)
+            self.__motherships.append(mothership)
+
+    def get_mothership(self, team):
+        return self.__motherships[team - 1]
+
+    @property
+    def drones(self):
+        return self.get_objects_by_type(DroneUnit)
+
+    @property
+    def asteroids(self):
+        return self.get_objects_by_type(Asteroid)
+
+    @property
+    def motherships(self):
+        return self.get_objects_by_type(MotherShip)
