@@ -183,7 +183,7 @@ class MatherShip(AstroUnit):
 
     @property
     def sprite_filename(self):
-        return 'mathership_{}.png'.format(self.__team)
+        return 'mothership_{}.png'.format(self.__team)
 
     @property
     def counter(self):
