@@ -1,158 +1,230 @@
 # -*- coding: utf-8 -*-
 import random
 
+import sys, os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'robogame_engine')))
+
+
 from robogame_engine.theme import theme
-from robogame_engine.geometry import Point
-from astrobox.core import Dron
+from robogame_engine.geometry import Point, Vector
+
+from astrobox.guns import PlasmaGun
 from astrobox.space_field import SpaceField
+from astrobox.units import DroneUnit, Unit
+from astrobox.utils import nearest_angle_distance
 
+from demo.strategies import *
 
-class WorkerDron(Dron):
-    my_team_drones = []
+class DroneUnitWithStrategies(DroneUnit):
+    def __init__(self, **kwargs):
+        super(DroneUnitWithStrategies, self).__init__(**kwargs)
+        self.__strategies = []
 
-    def is_other_dron_target(self, asteriod):
-        for dron in WorkerDron.my_team_drones:
-            if hasattr(dron, 'asteriod') and dron.asteriod and dron.asteriod.id == asteriod.id:
-                return True
-        return False
+    def append_strategy(self, strategy):
+        if strategy.is_group_unique:
+            for s in self.__strategies:
+                if s.group == strategy.group:
+                    self.__strategies.remove(s)
+        self.__strategies.append( strategy )
 
-    def get_nearest_asteriod(self):
-        asteriods_with_elerium = [asteriod for asteriod in self.asteroids if asteriod.payload > 0]
-        if not asteriods_with_elerium:
-            return None
-        nearest_asteroid = None
-        for asteriod in asteriods_with_elerium:
-            if self.is_other_dron_target(asteriod):
+    def clear_strategies(self):
+        self.__strategies = []
+
+    def is_strategy_finished(self):
+        return len(self.__strategies) == 0
+
+    def game_step(self):
+        self.native_game_step()
+        for s in self.__strategies:
+            if s.is_finished:
+                self.__strategies.remove(s)
                 continue
-            if nearest_asteroid is None or self.distance_to(asteriod.coord) < self.distance_to(nearest_asteroid.coord):
-                nearest_asteroid = asteriod
-        return nearest_asteroid
+            s.game_step()
+            break;
 
-    def go_next_asteriod(self):
-        if self.is_full:
-            self.move_at(self.my_mathership)
-        else:
-            self.asteriod = self.get_nearest_asteriod()
-            if self.asteriod is not None:
-                self.move_at(self.asteriod)
-            elif self.payload > 0:
-                self.move_at(self.my_mathership)
-            else:
-                i = random.randint(0, len(self.asteroids) - 1)
-                self.move_at(self.asteroids[i])
+    # @brief elerium_stocks возвращает все объекты мира из которых можно добывать ресурсы
+    @property
+    def elerium_stocks(self):
+        return [es for es in self.scene.get_objects_by_type(Unit) if hasattr(es, 'cargo') and not es.is_alive]
+    
+    # Позволяет обращаться к чистому обработчику из стратегий
+    def native_game_step(self):
+        super(DroneUnitWithStrategies, self).game_step()
+
+class WorkerDron(DroneUnitWithStrategies):
+    counter_attrs = dict(size=22, position=(75, 135), color=(255, 255, 255))
+
+    def __init__(self, **kwargs):
+        super(WorkerDron, self).__init__(**kwargs)
+        self.elerium_stock = None
 
     def on_born(self):
-        WorkerDron.my_team_drones.append(self)
-        self.go_next_asteriod()
-
-    def on_stop_at_asteroid(self, asteriod):
-        if asteriod.payload > 0:
-            self.load_from(asteriod)
-        else:
-            self.go_next_asteriod()
-
-    def on_load_complete(self):
-        self.go_next_asteriod()
-
-    def on_stop_at_mathership(self, mathership):
-        self.unload_to(mathership)
-
-    def on_unload_complete(self):
-        self.go_next_asteriod()
-
+        super(WorkerDron, self).on_born()
+        self.append_strategy(StrategyHarvesting(unit=self))
 
 class GreedyDron(WorkerDron):
 
-    def get_nearest_asteriod(self):
-        asteriods_with_elerium = [asteriod for asteriod in self.asteroids if asteriod.payload > 0]
-        if not asteriods_with_elerium:
+    def __init__(self, **kwargs):
+        super(GreedyDron, self).__init__(**kwargs)
+
+    def get_nearest_elerium_stock(self):
+        elerium_stocks = [es for es in self.scene.elerium_stocks if es.cargo.payload > 0]
+        for drone in self.teammates:
+            if drone.elerium_stock is not None and \
+                    not drone.cargo.is_full and \
+                    drone.elerium_stock in elerium_stocks:
+                elerium_stocks.remove(drone.elerium_stock)
+
+        if not elerium_stocks:
             return None
-        nearest_asteriod = None
+        # Берем наибольшее кол-во elerium-а, что сможем унести, из ближайшего
+        elerium_stocks = sorted(elerium_stocks, key=lambda x: x.distance_to(self))
+        nearest_stock = None
         max_elerium = 0
-        for asteriod in asteriods_with_elerium:
-            if self.is_other_dron_target(asteriod):
-                continue
-            if asteriod.payload > max_elerium:
-                nearest_asteriod = asteriod
-                max_elerium = asteriod.payload
-        if nearest_asteriod:
-            return nearest_asteriod
-        return random.choice(asteriods_with_elerium)
+        for stock in elerium_stocks:
+            if stock.cargo.payload >= self.cargo.free_space:
+                return stock
+            if stock.cargo.payload > max_elerium:
+                nearest_stock = stock
+                max_elerium = stock.cargo.payload
+        if nearest_stock:
+            return nearest_stock
+        return random.choice(elerium_stocks)
 
 
 class HunterDron(GreedyDron):
     _hunters = []
 
-    def on_born(self):
-        if len(HunterDron._hunters) < 3:
-            HunterDron._hunters.append(self)
-        super(HunterDron, self).on_born()
+    def __init__(self, **kwargs):
+        super(HunterDron, self).__init__(**kwargs)
+        self._hunting_strategy = None
+        self._approach_strategy = None
+        self._victim = None
+        #self._no_victim_strategy = False
+        self._victim_stamp = 0
+        self._next_victim = None
+        self._gun = PlasmaGun(self)
+        self.substrategy = None
 
-    @classmethod
-    def to_hunt(cls):
-        commander = cls._hunters[0]
-        drones = [dron for dron in commander.drones if not isinstance(dron, cls) and not dron.dead and dron.payload > 0]
-        drones = [dron for dron in drones if dron.distance_to(dron.my_mathership.coord) > theme.MATHERSHIP_SAFE_DISTANCE]
-        victim = None
-        for dron in drones:
-            if victim is None or (commander.distance_to(dron.coord) < commander.distance_to(victim.coord)):
-                victim = dron
-        if victim:
-            can_sting = 0
-            for hunter in cls._hunters:
-                if hunter.distance_to(victim.coord) < hunter.radius and hunter._health > theme.STING_POWER:
-                    can_sting += 1
-            if can_sting == len(cls._hunters):
-                for hunter in cls._hunters:
-                    hunter.sting(victim)
-            else:
-                for hunter in cls._hunters:
-                    hunter.move_at(victim)
+    @property
+    def gun(self):
+        return self._gun
+
+    @property
+    def victim(self):
+        return self._victim
+
+    def on_born(self):
+        super(WorkerDron, self).on_born()
+        self._hunting_strategy = StrategyHunting.getTeamStrategy(self.team, self)
+
+    def on_stop(self):
+        pass
+
+    def get_nearest_elerium_stock(self):
+        # Сперва сбор элериума с жертв
+        elerium_stocks = [drone for drone in self.unit.scene.drones if not drone.is_alive and drone.cargo.payload > 0]
+        for drone in self.unit.teammates:
+            if drone.elerium_stock is not None and \
+                    not drone.cargo.is_full and \
+                    drone.elerium_stock in elerium_stocks:
+                elerium_stocks.remove(drone.elerium_stock)
+        if elerium_stocks:
+            elerium_stocks = sorted(elerium_stocks, key=lambda x: x.distance_to(self))
+            return elerium_stocks[0];
+
+        # Потом с астероидов
+        elerium_stocks = [asteriod for asteriod in self.unit.scene.asteroids if asteriod.cargo.payload > 0]
+        for drone in self.unit.teammates:
+            if drone.elerium_stock is not None and \
+                    not drone.cargo.is_full and \
+                    drone.elerium_stock in elerium_stocks:
+                elerium_stocks.remove(drone.elerium_stock)
+        if not elerium_stocks:
+            return None
+        elerium_stocks = sorted(elerium_stocks, key=lambda x: x.distance_to(self))
+        return elerium_stocks[0]
+
+    def set_victim(self, victim):
+        self._next_victim = None
+        self._victim = victim
+        self._victim_stamp=0
+        if not self.substrategy.is_finished:
+            self.stop()
+            self.state.stop()
+        self.substrategy.reset()
+        return victim.coord.copy()
+
+    @property
+    def is_unloading(self):
+        return self.cargo.is_full or (self.substrategy is not None and \
+                self.substrategy.current_strategy_id == "approach&unload")
+    
+    def game_step(self):
+        self.native_game_step()
+        if self._hunting_strategy is None:
+            return
+        self._hunting_strategy.game_step(self)
+        if self.victim is not None:
+            vector = Vector.from_points(self.coord, self.victim.coord,
+                                        module=self.gun.shot_distance)
+            if int(self.distance_to(self.victim)) < 1 or (
+                    self.distance_to(self.victim) < vector.module \
+                    and abs(nearest_angle_distance(vector.direction, self.direction))<7
+                ):
+                self.gun.shot(self.victim)
         else:
-            drones = [dron for dron in commander.drons if not isinstance(dron, cls) and dron.dead and dron.payload > 0]
-            dead_elerium = sum(dron.payload for dron in drones)
-            hunter_elerium = sum(dron.payload for dron in cls._hunters)
-            hunters_capacity = sum(dron._max_elerium for dron in cls._hunters)
-            if dead_elerium and hunter_elerium < hunters_capacity:
-                victim = None
-                for dron in drones:
-                    if victim is None or (commander.distance_to(dron.coord) < commander.distance_to(victim.coord)):
-                        victim = dron
-                if victim:
-                    if commander.distance_to(victim.coord) < commander.radius:
-                        for hunter in cls._hunters:
-                            hunter.load_elerium_from(victim)
-                    else:
-                        for hunter in cls._hunters:
-                            hunter.move_at(victim)
-            if not dead_elerium and hunter_elerium:
-                for hunter in cls._hunters:
-                    hunter.move_at(hunter.my_mathership)
-
-    def on_stop_at_asteroid(self, asteriod):
-        HunterDron.to_hunt()
-        super(HunterDron, self).on_stop_at_asteroid(asteriod)
-
-    def on_stop_at_mathership(self, mathership):
-        if self not in HunterDron._hunters:
-            HunterDron.to_hunt()
-        super(HunterDron, self).on_stop_at_mathership(mathership)
-
-    def on_load_complete(self):
-        HunterDron.to_hunt()
-        super(HunterDron, self).on_load_complete()
-
-    def on_unload_complete(self):
-        HunterDron.to_hunt()
-        super(HunterDron, self).on_unload_complete()
+            enemies = [enemy for enemy in self.scene.drones \
+                             if enemy.team != self.team and enemy.is_alive and \
+                             enemy.distance_to(self) < self.gun.shot_distance]
+            enemie = sorted(enemies, key=lambda x: -x.cargo.payload)
+            for enemy in enemies:
+                vector = Vector.from_points(self.coord, enemy.coord)
+                if abs(nearest_angle_distance(vector.direction, self.direction)) < 7:
+                    self.gun.shot(enemy)
+                    break
+        pass #
 
 
-class RunnerDron(Dron):
+
+class RunnerDron(DroneUnitWithStrategies):
+
+    def anyAsteroid(self):
+        return random.choice(self.scene.asteroids)
 
     def on_born(self):
-        x = 1000 + random.randint(0, 500) if self.coord.x < 300 else random.randint(0, 100)
-        y = 1000 + random.randint(0, 500) if self.coord.y < 300 else random.randint(0, 100)
-        self.move_at(Point(x, y))  # проверка на выход за границы экрана
+        self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
+
+    def game_step(self):
+        super(RunnerDron, self).game_step()
+        if self.is_strategy_finished():
+            self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
+
+class DestroyerDron(DroneUnitWithStrategies):
+    _hunters = []
+
+    def __init__(self, **kwargs):
+        super(DestroyerDron, self).__init__(**kwargs)
+        self._victim = None
+        #self._no_victim_strategy = False
+        self._victim_stamp = 0
+        self._next_victim = None
+        self._gun = PlasmaGun(self)
+        self._target_mship = None
+        self.elerium_stock = None
+
+    @property
+    def gun(self):
+        return self._gun
+
+    def on_born(self):
+        self.append_strategy(StrategyDestroyer(unit=self))
+
+    def game_step(self):
+        super(DestroyerDron, self).game_step()
+        if self.is_strategy_finished():
+            self.append_strategy(StrategyHarvesting(unit=self))
 
 
 if __name__ == '__main__':
@@ -161,12 +233,7 @@ if __name__ == '__main__':
         speed=1,
         field=(1600, 800),
         asteroids_count=20,
+        team_drone_classes=[WorkerDron, GreedyDron, HunterDron, DestroyerDron],
     )
-
-    count = 3
-    drones = [WorkerDron() for i in range(count)]
-    drones_2 = [GreedyDron() for i in range(count)]
-    drones_3 = [HunterDron() for i in range(count)]
-    drones_4 = [RunnerDron() for i in range(count)]
 
     space_field.go()

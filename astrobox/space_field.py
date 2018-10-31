@@ -2,7 +2,7 @@
 import math
 import random
 
-from astrobox.core import (MatherShip, Asteroid, Dron)
+from astrobox.units import (MotherShip, Asteroid, DroneUnit)
 from robogame_engine import Scene
 from robogame_engine.geometry import Point
 from robogame_engine.theme import theme
@@ -25,40 +25,53 @@ class Rect(object):
         self.y += dy
 
     def __str__(self):
-        return "{}x{} ({}, {})".format(self.w, self.h, self.x, self.y)
+        return "[{}]{}x{} ({}, {})".format(id(self), self.w, self.h, self.x, self.y)
 
 
 class SpaceField(Scene):
     check_collisions = False
+    detect_collisions = True
     _CELL_JITTER = 0.7
     # _HONEY_SPEED_FACTOR = 0.02
 
     def __init__(self, *args, **kwargs):
-        self.__matherships = []
+        self.__motherships = {}
         self.__asteroids = []
+        self.__drones = []
         if 'theme_mod_path' not in kwargs:
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
         super(SpaceField, self).__init__(*args, **kwargs)
 
-    def prepare(self, asteroids_count=5):
+    def prepare(self, asteroids_count=5, team_drone_classes=[]):
         self._fill_space(
             asteroids_count=asteroids_count,
+            team_drone_classes=team_drone_classes,
         )
-        self._objects_holder = self
         # TODO посмотреть зачем корректировалась скорость перекачки
         # honey_speed = int(theme.MAX_SPEED * self._HONEY_SPEED_FACTOR)
         # if honey_speed < 1:
         #     honey_speed = 1
         # CargoBox.__load_speed = honey_speed
 
-    def _fill_space(self, asteroids_count):
+    def _get_team_pos(self, team):
+        if team == 1:
+            return Point(90, 75)
+        elif team == 2:
+            return Point(theme.FIELD_WIDTH - 90, 75)
+        elif team == 3:
+            return Point(90, theme.FIELD_HEIGHT - 75)
+        else:
+            return Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
+
+
+    def _fill_space(self, asteroids_count, team_drone_classes):
         field = Rect(w=theme.FIELD_WIDTH, h=theme.FIELD_HEIGHT)
-        field.reduce(dw=MatherShip.radius * 2, dh=MatherShip.radius * 2)
+        field.reduce(dw=MotherShip.radius * 2, dh=MotherShip.radius * 2)
         if self.teams_count >= 2:
-            field.reduce(dw=MatherShip.radius * 2)
-        if self.teams_count >= 3:
-            field.reduce(dh=MatherShip.radius * 2)
-        if field.w < MatherShip.radius or field.h < MatherShip.radius:
+            field.reduce(dw=MotherShip.radius * 2)
+        #if self.teams_count >= 3:
+        #    field.reduce(dh=MotherShip.radius * 2)
+        if field.w < MotherShip.radius or field.h < MotherShip.radius:
             raise Exception("Too little field...")
         if theme.DEBUG:
             print("Initial field", field)
@@ -88,14 +101,13 @@ class SpaceField(Scene):
         if theme.DEBUG:
             print("Adjusted field", field)
 
-        field.x = MatherShip.radius * 2
-        field.y = MatherShip.radius * 2
+        field.x = MotherShip.radius * 2
+        field.y = MotherShip.radius * 2
         if theme.DEBUG:
             print("Shifted field", field)
 
         max_elerium = 0
-        i = 0
-        while i < asteroids_count:
+        for i in range(asteroids_count):
             cell_number = random.choice(cell_numbers)
             cell_numbers.remove(cell_number)
             cell.x = (cell_number % cells_in_width) * cell.w
@@ -103,43 +115,41 @@ class SpaceField(Scene):
             dx = random.randint(0, jit_box.w)
             dy = random.randint(0, jit_box.h)
             pos = Point(field.x + cell.x + dx, field.y + cell.y + dy)
-            asteroid = Asteroid(pos)
+            asteroid = Asteroid(coord=pos)
             self.__asteroids.append(asteroid)
-            max_elerium += asteroid.payload
-            i += 1
-        max_elerium /= float(self.teams_count)
+            max_elerium += asteroid.cargo.payload
+        max_elerium /= float(theme.TEAMS_COUNT)
         max_elerium = int(round((max_elerium / 1000.0) * 1.3)) * 1000
         if max_elerium < 1000:
             max_elerium = 1000
-        for team, cls in enumerate(self.teams):
-            team += 1
-            # TODO вычислять координаты от размера игрового поля и радиуса матки
-            if team == 1:
-                pos = Point(90, 75)
-            elif team == 2:
-                pos = Point(theme.FIELD_WIDTH - 90, 75)
-            elif team == 3:
-                pos = Point(90, theme.FIELD_HEIGHT - 75)
-            else:
-                pos = Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
-            mathership_class = getattr(cls, 'mathership_class', MatherShip)
-            mathership = mathership_class(coord=pos, max_elerium=max_elerium, team=team)
-            for dron in self.get_objects_by_type(cls):
-                dron.coord = pos.copy()
-                dron.set_team(team=team)
-            self.__matherships.append(mathership)
 
-    def get_mathership(self, team):
-        return self.__matherships[team - 1]
+        for droneClass in team_drone_classes:
+            team = self.get_team(droneClass)
+            # TODO вычислять координаты от размера игрового поля и радиуса матки
+            pos = self._get_team_pos(team)
+            mothership_class = getattr(droneClass, 'mothership_class', MotherShip)
+            mothership = mothership_class(coord=pos.copy(), max_payload=max_elerium, team=team)
+            mothership.set_team(team)
+            self.__motherships[team] = mothership
+
+        for droneClass in team_drone_classes:
+            team = self.get_team(droneClass)
+            pos = self._get_team_pos(team)
+            for i in range(theme.TEAM_DRONES_COUNT):
+                drone = droneClass(coord=pos.copy(), team=team)
+                self.__drones.append(drone)
+
+    def get_mothership(self, team):
+        return self.__motherships[team]
 
     @property
     def drones(self):
-        return self.get_objects_by_type(Dron)
+        return self.get_objects_by_type(DroneUnit)
 
     @property
     def asteroids(self):
         return self.get_objects_by_type(Asteroid)
 
     @property
-    def matherships(self):
-        return self.get_objects_by_type(MatherShip)
+    def motherships(self):
+        return self.get_objects_by_type(MotherShip)
