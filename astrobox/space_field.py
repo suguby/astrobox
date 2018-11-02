@@ -30,7 +30,7 @@ class Rect(object):
 
 class SpaceField(Scene):
     check_collisions = False
-    detect_collisions = True
+    detect_overlaps = True
     _CELL_JITTER = 0.7
     # _HONEY_SPEED_FACTOR = 0.02
 
