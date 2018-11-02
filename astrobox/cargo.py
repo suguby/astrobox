@@ -2,7 +2,7 @@
 from robogame_engine import GameObject
 from robogame_engine.theme import theme
 
-class Cargo:
+class Cargo(object):
     __payload = 0
     __max_volume = 0
     def __init__(self, owner, payload=0, max_payload=1):
@@ -51,7 +51,7 @@ class Cargo:
         return self.__max_payload - self.__payload
 
 
-class CargoTransition:
+class CargoTransition(object):
     selectable = False
 
     def __init__(self, cargo_from=None, cargo_to=None):

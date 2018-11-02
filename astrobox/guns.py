@@ -151,7 +151,7 @@ class Projectile(GameObject):
                                                         Vector.from_points(obj_status.coord, self.coord).direction),
                                               ttl=self.__attached_ttl)
 
-class Gun:
+class Gun(object):
     projectile = None
 
     def __init__(self, owner=None):
