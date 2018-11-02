@@ -135,7 +135,7 @@ class Projectile(GameObject):
         point = self._owner.coord.copy() + vector
         super(Projectile, self).move_at(point, speed=self.__speed)
 
-    def on_collide_detected_with(self, obj_status):
+    def on_overlap_with(self, obj_status):
         # Пролетаем свои и некомандные объекты
         if obj_status.team < 0 or obj_status.team == self._owner.team:
             return
