@@ -5,7 +5,7 @@ from robogame_engine.theme import theme
 from robogame_engine.geometry import Point, Vector, normalise_angle
 from astrobox.cargo import CargoTransition
 
-class Strategy:
+class Strategy(object):
     def __init__(self, unit=None, id=None, group=None, is_group_unique=False):
         self.__unit = unit
         self.__id = id
