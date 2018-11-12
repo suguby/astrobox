@@ -42,10 +42,9 @@ class SpaceField(Scene):
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
         super(SpaceField, self).__init__(*args, **kwargs)
 
-    def prepare(self, asteroids_count=5, team_drone_classes=[]):
+    def prepare(self, asteroids_count=5):
         self._fill_space(
-            asteroids_count=asteroids_count,
-            team_drone_classes=team_drone_classes,
+            asteroids_count=asteroids_count
         )
         # TODO посмотреть зачем корректировалась скорость перекачки
         # honey_speed = int(theme.MAX_SPEED * self._HONEY_SPEED_FACTOR)
@@ -63,8 +62,7 @@ class SpaceField(Scene):
         else:
             return Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
 
-
-    def _fill_space(self, asteroids_count, team_drone_classes):
+    def _fill_space(self, asteroids_count):
         field = Rect(w=theme.FIELD_WIDTH, h=theme.FIELD_HEIGHT)
         field.reduce(dw=MotherShip.radius * 2, dh=MotherShip.radius * 2)
         if self.teams_count >= 2:
@@ -123,7 +121,8 @@ class SpaceField(Scene):
         if max_elerium < 1000:
             max_elerium = 1000
 
-        for droneClass in team_drone_classes:
+        uniqueDroneClass = list(set([drone.__class__ for drone in self.drones]))
+        for droneClass in uniqueDroneClass:
             team = self.get_team(droneClass)
             # TODO вычислять координаты от размера игрового поля и радиуса матки
             pos = self._get_team_pos(team)
@@ -132,15 +131,12 @@ class SpaceField(Scene):
             mothership.set_team(team)
             self.__motherships[team] = mothership
 
-        for droneClass in team_drone_classes:
-            team = self.get_team(droneClass)
-            pos = self._get_team_pos(team)
-            for i in range(theme.TEAM_DRONES_COUNT):
-                drone = droneClass(coord=pos.copy(), team=team)
-                self.__drones.append(drone)
+        for drone in self.drones:
+            # Перемещаем дронов к их месту спуна
+            drone.coord = drone.mothership().coord.copy()
 
     def get_mothership(self, team):
-        return self.__motherships[team]
+        return self.__motherships.get(team);
 
     @property
     def drones(self):

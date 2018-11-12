@@ -5,7 +5,7 @@ from robogame_engine import GameObject
 from robogame_engine.constants import ROTATE_TURNING
 from robogame_engine.theme import theme
 
-from .cargo import *
+from .cargo import Cargo
 
 class Unit(GameObject):
     coord = None  # переопределяется в потомках
@@ -44,6 +44,7 @@ class DroneUnit(Unit):
     layer = 2
 
     def __init__(self, **kwargs):
+        kwargs['team'] = self.scene.get_team(self.__class__)
         super(DroneUnit, self).__init__(**kwargs)
         self.__mothership = None
         self._cargo = Cargo(self, payload=0, max_payload=theme.DRONE_CARGO_PAYLOAD)

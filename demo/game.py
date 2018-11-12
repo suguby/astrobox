@@ -242,7 +242,11 @@ if __name__ == '__main__':
         speed=1,
         field=(1600, 800),
         asteroids_count=20,
-        team_drone_classes=[WorkerDron, GreedyDron, HunterDron, DestroyerDron],
     )
+
+    teamA = [WorkerDron()    for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamB = [GreedyDron()    for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamC = [HunterDron()    for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamD = [DestroyerDron() for _ in range(theme.TEAM_DRONES_COUNT)]
 
     space_field.go()
