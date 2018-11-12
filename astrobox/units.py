@@ -5,6 +5,7 @@ from robogame_engine import GameObject
 from robogame_engine.constants import ROTATE_TURNING
 from robogame_engine.theme import theme
 
+from .guns import PlasmaGun
 from .cargo import Cargo
 
 class Unit(GameObject):
@@ -48,7 +49,18 @@ class DroneUnit(Unit):
         super(DroneUnit, self).__init__(**kwargs)
         self.__mothership = None
         self._cargo = Cargo(self, payload=0, max_payload=theme.DRONE_CARGO_PAYLOAD)
+        self.__gun = None
+        if theme.DRONES_CAN_FIGHT:
+            self.__gun = PlasmaGun(self)
         self.__health = theme.DRONE_MAX_SHIELD
+
+    @property
+    def have_gun(self):
+        return self.__gun is not None
+
+    @property
+    def gun(self):
+        return self.__gun
 
     @property
     def teammates(self):
@@ -93,7 +105,7 @@ class DroneUnit(Unit):
             self.__heal_taken(theme.MOTHERSHIP_HEALING_RATE)
         else:
             self.__heal_taken(theme.DRONE_SHIELD_RENEWAL_RATE)
-        if hasattr(self, 'gun'):
+        if self.have_gun:
             self.gun.game_step()
         super(DroneUnit, self).game_step()
 

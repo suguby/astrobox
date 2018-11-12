@@ -101,6 +101,9 @@ class Projectile(GameObject):
         return self.__ttl > 0
 
     def game_step(self):
+        if not theme.DRONES_CAN_FIGHT:
+            return
+
         if self.has_hit:
             self.__attached.game_step()
             return
@@ -130,6 +133,9 @@ class Projectile(GameObject):
         pass
 
     def on_born(self):
+        if not theme.DRONES_CAN_FIGHT:
+            self.scene.remove_object(self)
+            return
         #print(self.__class__.__name__+"::on_born", PlasmaProjectile.max_distance)
         vector = Vector.from_direction(self._owner.direction, module=PlasmaProjectile.max_distance)
         point = self._owner.coord.copy() + vector
@@ -179,7 +185,7 @@ class Gun(object):
         return self.projectile.max_distance
 
     def shot(self, target):
-        if not self.can_shot:
+        if not theme.DRONES_CAN_FIGHT or not self.can_shot:
             return
         self._cooldown = theme.PLASMAGUN_COOLDOWN_TIME
         coord = self.owner.coord.copy()
