@@ -106,12 +106,7 @@ class HunterDron(GreedyDron):
         #self._no_victim_strategy = False
         self._victim_stamp = 0
         self._next_victim = None
-        self._gun = PlasmaGun(self)
         self.substrategy = None
-
-    @property
-    def gun(self):
-        return self._gun
 
     @property
     def victim(self):
@@ -119,7 +114,10 @@ class HunterDron(GreedyDron):
 
     def on_born(self):
         super(WorkerDron, self).on_born()
-        self._hunting_strategy = StrategyHunting.getTeamStrategy(self.team, self)
+        if self.have_gun:
+            self._hunting_strategy = StrategyHunting.getTeamStrategy(self.team, self)
+        else:
+            self.append_strategy(StrategyHarvesting(unit=self))
 
     def on_stop(self):
         pass
@@ -164,6 +162,10 @@ class HunterDron(GreedyDron):
                 self.substrategy.current_strategy_id == "approach&unload")
     
     def game_step(self):
+        if not self.have_gun:
+            super(HunterDron, self).game_step()
+            return
+
         self.native_game_step()
         if self._hunting_strategy is None:
             return
@@ -212,13 +214,8 @@ class DestroyerDron(DroneUnitWithStrategies):
         #self._no_victim_strategy = False
         self._victim_stamp = 0
         self._next_victim = None
-        self._gun = PlasmaGun(self)
         self._target_mship = None
         self._elerium_stock = None
-
-    @property
-    def gun(self):
-        return self._gun
 
     @property
     def elerium_stock(self):
@@ -228,12 +225,16 @@ class DestroyerDron(DroneUnitWithStrategies):
         self._elerium_stock = stock
 
     def on_born(self):
-        self.append_strategy(StrategyDestroyer(unit=self))
+        if self.have_gun:
+            self.append_strategy(StrategyDestroyer(unit=self))
+        else:
+            self.append_strategy(StrategyHarvesting(unit=self))
 
     def game_step(self):
         super(DestroyerDron, self).game_step()
-        if self.is_strategy_finished():
-            self.append_strategy(StrategyHarvesting(unit=self))
+        if self.have_gun:
+            if self.is_strategy_finished():
+                self.append_strategy(StrategyHarvesting(unit=self))
 
 
 if __name__ == '__main__':
