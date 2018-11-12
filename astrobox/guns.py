@@ -59,7 +59,6 @@ class ProjectileAnimation(object):
 class Projectile(GameObject):
     coord = None
     rotate_mode = ROTATE_TURNING
-    friendly_fire = True
     radius = 1
     selectable = False
     layer = 3
@@ -140,13 +139,13 @@ class Projectile(GameObject):
         # Пролетаем некомандные объекты
         if obj_status.team < 0:
             return
-        if Projectile.friendly_fire:
-            # Пролетаем свои объекты
-            if obj_status.team == self._owner.team:
+        if theme.TEAM_DRONES_FRIENDLY_FIRE:
+            # Не наносим урон себе
+            if obj_status.id == self._owner.id:
                 return
         else:
-            # Не наносим урон себе
-            if obj_status == self._owner:
+            # Пролетаем свои объекты
+            if obj_status.team == self._owner.team:
                 return
         # За премя жизни ни в кого не попали
         if not obj_status.is_alive or not self.is_alive:
