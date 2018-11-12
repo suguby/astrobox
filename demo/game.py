@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
 
-import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'robogame_engine')))
-
-
 from robogame_engine.theme import theme
 from robogame_engine.geometry import Point, Vector
 
@@ -57,7 +52,14 @@ class WorkerDron(DroneUnitWithStrategies):
 
     def __init__(self, **kwargs):
         super(WorkerDron, self).__init__(**kwargs)
-        self.elerium_stock = None
+        self._elerium_stock = None
+
+    @property
+    def elerium_stock(self):
+        return self._elerium_stock
+
+    def set_elerium_stock(self, stock):
+        self._elerium_stock = stock
 
     def on_born(self):
         super(WorkerDron, self).on_born()
