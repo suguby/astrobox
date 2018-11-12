@@ -194,16 +194,16 @@ class StrategyHarvesting(Strategy):
         nearest_calc = self.unit if ('get_nearest_elerium_stock' in self.unit.__dict__) else self;
         if self.__substrategy is None or self.__substrategy.is_finished:
             if self.unit.cargo.is_full:
-                self.unit.elerium_stock = None
+                self.unit.set_elerium_stock(None)
                 self.__substrategy = StrategyApproachAndUnload(unit=self.unit, target_unit=self.unit.mothership());
             else:
                 near_elerium_stock = nearest_calc.get_nearest_elerium_stock()
                 if near_elerium_stock is not None:
-                    self.unit.elerium_stock = near_elerium_stock
+                    self.unit.set_elerium_stock(near_elerium_stock)
                     self.__substrategy = StrategyApproachAndLoad(unit=self.unit, target_unit=near_elerium_stock)
                 else:
                     if self.unit.cargo.payload > 0 and not self.unit.mothership().cargo.is_full:
-                        self.unit.elerium_stock = None
+                        self.unit.set_elerium_stock(None)
                         self.__substrategy = StrategyApproachAndUnload(unit=self.unit, target_unit=self.unit.mothership());
                     else:
                         # Делаем видимость загруженности дрона работой

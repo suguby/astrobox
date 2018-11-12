@@ -214,11 +214,18 @@ class DestroyerDron(DroneUnitWithStrategies):
         self._next_victim = None
         self._gun = PlasmaGun(self)
         self._target_mship = None
-        self.elerium_stock = None
+        self._elerium_stock = None
 
     @property
     def gun(self):
         return self._gun
+
+    @property
+    def elerium_stock(self):
+        return self._elerium_stock
+
+    def set_elerium_stock(self, stock):
+        self._elerium_stock = stock
 
     def on_born(self):
         self.append_strategy(StrategyDestroyer(unit=self))
