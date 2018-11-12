@@ -174,7 +174,7 @@ class MotherShip(Unit):
         return 'mothership_{}_crashed.png'.format(self.team)
 
     @property
-    def meter_1(self):
+    def meter_2(self):
         return self.__health / theme.MOTHERSHIP_MAX_SHIELD
 
     @property
