@@ -59,6 +59,7 @@ class ProjectileAnimation(object):
 class Projectile(GameObject):
     coord = None
     rotate_mode = ROTATE_TURNING
+    friendly_fire = True
     radius = 1
     selectable = False
     layer = 3
@@ -130,14 +131,14 @@ class Projectile(GameObject):
         pass
 
     def on_born(self):
-        #print(self.__class__.__name__+"::on_born", PlasmaProjectile._max_distance)
+        #print(self.__class__.__name__+"::on_born", PlasmaProjectile.max_distance)
         vector = Vector.from_direction(self._owner.direction, module=PlasmaProjectile.max_distance)
         point = self._owner.coord.copy() + vector
         super(Projectile, self).move_at(point, speed=self.__speed)
 
     def on_overlap_with(self, obj_status):
         # Пролетаем свои и некомандные объекты
-        if obj_status.team < 0 or obj_status.team == self._owner.team:
+        if obj_status.team < 0 or (not friendly_fire and obj_status.team == self._owner.team):
             return
         # За премя жизни ни в кого не попали
         if not obj_status.is_alive or not self.is_alive:
