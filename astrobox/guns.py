@@ -185,6 +185,8 @@ class Gun(object):
         return self.projectile.max_distance
 
     def shot(self, target):
+        if not self._owner.is_alive:
+            return
         if not theme.DRONES_CAN_FIGHT or not self.can_shot:
             return
         self._cooldown = theme.PLASMAGUN_COOLDOWN_TIME
