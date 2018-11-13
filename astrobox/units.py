@@ -13,9 +13,8 @@ class Unit(GameObject):
     radius = 0
     _cargo = None
 
-    def __init__(self, team=-1, **kwargs):
+    def __init__(self, **kwargs):
         super(Unit, self).__init__(**kwargs);
-        self.set_team(team)
         self._move_target = None
 
     @property
@@ -45,7 +44,6 @@ class DroneUnit(Unit):
     layer = 2
 
     def __init__(self, **kwargs):
-        kwargs['team'] = self.scene.get_team(self.__class__)
         super(DroneUnit, self).__init__(**kwargs)
         self.__mothership = None
         self._cargo = Cargo(self, payload=0, max_payload=theme.DRONE_CARGO_PAYLOAD)

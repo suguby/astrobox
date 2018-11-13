@@ -71,7 +71,8 @@ class CargoTransition(object):
         return self.__done
 
     def game_step(self):
-        if self.cargo_from.owner.team >= 0 and self.cargo_from.owner.team != self.cargo_to.owner.team:
+        if self.cargo_from.owner.team is not None and self.cargo_to.owner.team is not None and \
+           self.cargo_from.owner.team != self.cargo_to.owner.team:
             # Не можем загружать из чужих живых объектов
             if self.cargo_from.owner.is_alive:
                 self.__done = True
