@@ -124,7 +124,7 @@ class DroneUnit(Unit):
         super(DroneUnit, self).turn_to(target, speed=theme.DRONE_TURN_SPEED)
 
 # XXX: удалить этот класс после завершения курса
-class Dron(DroneUnit): pass
+class Drone(DroneUnit): pass
 
 class Asteroid(Unit):
     rotate_mode = ROTATE_TURNING
