@@ -126,7 +126,7 @@ class SpaceField(Scene):
             # TODO вычислять координаты от размера игрового поля и радиуса матки
             pos = self._get_team_pos(team)
             mothership_class = getattr(droneClass, 'mothership_class', MotherShip)
-            mothership = mothership_class(coord=pos.copy(), max_payload=max_elerium, team=team)
+            mothership = mothership_class(coord=pos.copy(), max_payload=max_elerium)
             mothership.set_team(team)
             self.__motherships[team] = mothership
 
