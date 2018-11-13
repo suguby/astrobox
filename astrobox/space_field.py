@@ -121,8 +121,7 @@ class SpaceField(Scene):
         if max_elerium < 1000:
             max_elerium = 1000
 
-        uniqueDroneClass = list(set([drone.__class__ for drone in self.drones]))
-        for droneClass in uniqueDroneClass:
+        for droneClass in self.teams:
             team = self.get_team(droneClass)
             # TODO вычислять координаты от размера игрового поля и радиуса матки
             pos = self._get_team_pos(team)
