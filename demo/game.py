@@ -47,11 +47,11 @@ class DroneUnitWithStrategies(DroneUnit):
     def native_game_step(self):
         super(DroneUnitWithStrategies, self).game_step()
 
-class WorkerDron(DroneUnitWithStrategies):
+class WorkerDrone(DroneUnitWithStrategies):
     counter_attrs = dict(size=22, position=(75, 135), color=(255, 255, 255))
 
     def __init__(self, **kwargs):
-        super(WorkerDron, self).__init__(**kwargs)
+        super(WorkerDrone, self).__init__(**kwargs)
         self._elerium_stock = None
 
     @property
@@ -62,13 +62,13 @@ class WorkerDron(DroneUnitWithStrategies):
         self._elerium_stock = stock
 
     def on_born(self):
-        super(WorkerDron, self).on_born()
+        super(WorkerDrone, self).on_born()
         self.append_strategy(StrategyHarvesting(unit=self))
 
-class GreedyDron(WorkerDron):
+class GreedyDrone(WorkerDrone):
 
     def __init__(self, **kwargs):
-        super(GreedyDron, self).__init__(**kwargs)
+        super(GreedyDrone, self).__init__(**kwargs)
 
     def get_nearest_elerium_stock(self):
         elerium_stocks = [es for es in self.scene.elerium_stocks if es.cargo.payload > 0]
@@ -95,11 +95,11 @@ class GreedyDron(WorkerDron):
         return random.choice(elerium_stocks)
 
 
-class HunterDron(GreedyDron):
+class HunterDrone(GreedyDrone):
     _hunters = []
 
     def __init__(self, **kwargs):
-        super(HunterDron, self).__init__(**kwargs)
+        super(HunterDrone, self).__init__(**kwargs)
         self._hunting_strategy = None
         self._approach_strategy = None
         self._victim = None
@@ -113,7 +113,7 @@ class HunterDron(GreedyDron):
         return self._victim
 
     def on_born(self):
-        super(WorkerDron, self).on_born()
+        super(WorkerDrone, self).on_born()
         if self.have_gun:
             self._hunting_strategy = StrategyHunting.getTeamStrategy(self.team, self)
         else:
@@ -163,7 +163,7 @@ class HunterDron(GreedyDron):
     
     def game_step(self):
         if not self.have_gun:
-            super(HunterDron, self).game_step()
+            super(HunterDrone, self).game_step()
             return
 
         self.native_game_step()
@@ -192,7 +192,7 @@ class HunterDron(GreedyDron):
 
 
 
-class RunnerDron(DroneUnitWithStrategies):
+class RunnerDrone(DroneUnitWithStrategies):
 
     def anyAsteroid(self):
         return random.choice(self.scene.asteroids)
@@ -201,15 +201,15 @@ class RunnerDron(DroneUnitWithStrategies):
         self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
 
     def game_step(self):
-        super(RunnerDron, self).game_step()
+        super(RunnerDrone, self).game_step()
         if self.is_strategy_finished():
             self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
 
-class DestroyerDron(DroneUnitWithStrategies):
+class DestroyerDrone(DroneUnitWithStrategies):
     _hunters = []
 
     def __init__(self, **kwargs):
-        super(DestroyerDron, self).__init__(**kwargs)
+        super(DestroyerDrone, self).__init__(**kwargs)
         self._victim = None
         #self._no_victim_strategy = False
         self._victim_stamp = 0
@@ -231,7 +231,7 @@ class DestroyerDron(DroneUnitWithStrategies):
             self.append_strategy(StrategyHarvesting(unit=self))
 
     def game_step(self):
-        super(DestroyerDron, self).game_step()
+        super(DestroyerDrone, self).game_step()
         if self.have_gun:
             if self.is_strategy_finished():
                 self.append_strategy(StrategyHarvesting(unit=self))
@@ -245,9 +245,9 @@ if __name__ == '__main__':
         asteroids_count=20,
     )
 
-    teamA = [WorkerDron()    for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamB = [GreedyDron()    for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamC = [HunterDron()    for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamD = [DestroyerDron() for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamA = [WorkerDrone()    for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamB = [GreedyDrone()    for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamC = [HunterDrone()    for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamD = [DestroyerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
 
     space_field.go()
