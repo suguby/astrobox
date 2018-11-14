@@ -105,7 +105,6 @@ class DroneUnit(Unit):
         if self.__dead_flight_speed < 0.0:
             return;
         if self.__angle_of_death is None:
-            self.layer = 1
             self.__angle_of_death = random.randint(0, 359)
 
         x = self.__dead_flight_speed*math.sin(self.__angle_of_death)
