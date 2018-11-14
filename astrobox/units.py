@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import math
 import random
 
 from robogame_engine import GameObject
@@ -44,13 +45,15 @@ class DroneUnit(Unit):
     layer = 2
 
     def __init__(self, **kwargs):
-        super(DroneUnit, self).__init__(**kwargs)
         self.__mothership = None
         self._cargo = Cargo(self, payload=0, max_payload=theme.DRONE_CARGO_PAYLOAD)
         self.__gun = None
         if theme.DRONES_CAN_FIGHT:
             self.__gun = PlasmaGun(self)
         self.__health = theme.DRONE_MAX_SHIELD
+        self.__dead_flight_speed = theme.DRONE_DEAD_SPEED
+        self.__angle_of_death = None
+        super(DroneUnit, self).__init__(**kwargs)
 
     @property
     def have_gun(self):
@@ -95,9 +98,28 @@ class DroneUnit(Unit):
     def mothership(self):
         if self.__mothership is None:
             self.__mothership = self.scene.get_mothership(self.team)
+            assert self.__mothership is not None
         return self.__mothership
 
+    def __dead_game_step(self):
+        if self.__dead_flight_speed < 0.0:
+            return;
+        if self.__angle_of_death is None:
+            self.layer = 1
+            self.__angle_of_death = random.randint(0, 359)
+
+        x = self.__dead_flight_speed*math.sin(self.__angle_of_death)
+        y = self.__dead_flight_speed*math.cos(self.__angle_of_death)
+        self.coord.x = min(theme.FIELD_WIDTH-self.radius, max(self.radius, self.coord.x+x))
+        self.coord.y = min(theme.FIELD_HEIGHT-self.radius, max(self.radius, self.coord.y+y))
+
+        self.__dead_flight_speed -= theme.DRONE_DEAD_SPEED_DECELERATION
+        super(DroneUnit, self).game_step();
+
     def game_step(self):
+        if not self.is_alive:
+            self.__dead_game_step();
+            return;
         if self.mothership() and self.mothership().is_alive and \
                 self.distance_to(self.mothership().coord) < theme.MOTHERSHIP_HEALING_DISTANCE:
             self.__heal_taken(theme.MOTHERSHIP_HEALING_RATE)
