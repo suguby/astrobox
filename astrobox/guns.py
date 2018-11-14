@@ -142,8 +142,10 @@ class Projectile(GameObject):
         super(Projectile, self).move_at(point, speed=self.__speed)
 
     def on_overlap_with(self, obj_status):
+        if not hasattr(obj_status, "damage_taken"):
+            return
         # Пролетаем некомандные объекты
-        if obj_status.team < 0:
+        if obj_status.team is None:
             return
         if theme.TEAM_DRONES_FRIENDLY_FIRE:
             # Не наносим урон себе
