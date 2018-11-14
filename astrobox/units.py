@@ -44,6 +44,28 @@ class DroneUnit(Unit):
     auto_team = True
     layer = 2
 
+    class __DeathAnimation(object):
+        def __init__(self, owner):
+            self.__team = owner.team
+            self.__sprites = ['teams/{}/blow_up_{}.png'.format(owner.team, i+1) for i in range(3)]
+            self.__sprites.append('teams/any_drone_explosion.png')
+            self.__sprites.append('teams/{}/drone_crashed.png'.format(owner.team))
+            self.__animation_speed = 10 # фреймов на спрайт
+            self.__animation_frame = 0 # счетчик фреймов
+            self.__current_sprite = self.__sprites[0]
+
+        def sprite_filename(self):
+            # последний в списке?
+            if self.__sprites.index(self.__current_sprite) == len(self.__sprites)-1:
+                return self.__current_sprite
+            if self.__animation_frame < self.__animation_speed:
+                self.__animation_frame += 1
+            else:
+                self.__animation_frame = 0
+                # переключиться на следующий
+                self.__current_sprite = self.__sprites[self.__sprites.index(self.__current_sprite)+1]
+            return self.__current_sprite
+
     def __init__(self, **kwargs):
         self.__mothership = None
         self._cargo = Cargo(self, payload=0, max_payload=theme.DRONE_CARGO_PAYLOAD)
@@ -51,9 +73,11 @@ class DroneUnit(Unit):
         if theme.DRONES_CAN_FIGHT:
             self.__gun = PlasmaGun(self)
         self.__health = theme.DRONE_MAX_SHIELD
+        super(DroneUnit, self).__init__(**kwargs)
+
         self.__dead_flight_speed = theme.DRONE_DEAD_SPEED
         self.__angle_of_death = None
-        super(DroneUnit, self).__init__(**kwargs)
+        self.__death_animaion = self.__DeathAnimation(self)
 
     @property
     def have_gun(self):
@@ -70,8 +94,8 @@ class DroneUnit(Unit):
     @property
     def sprite_filename(self):
         if self.is_alive:
-            return 'dron_{}.png'.format(self.team)
-        return 'dron_{}_crashed.png'.format(self.team)
+            return 'teams/{}/drone.png'.format(self.team)
+        return self.__death_animaion.sprite_filename()
 
     @property
     def meter_1(self):
