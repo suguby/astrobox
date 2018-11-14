@@ -91,7 +91,7 @@ class StrategyApproach(Strategy):
             return
         if new_distance > self._target_distance:
             self.__last_distance = new_distance
-            self.unit.move_at(self._target_point, speed=theme.DRONE_SPEED)
+            self.unit.move_at(self._target_point.copy(), speed=theme.DRONE_SPEED)
 
 # Комбинированные стратегии
 class StrategySequence(Strategy):
@@ -105,7 +105,7 @@ class StrategySequence(Strategy):
             return False
         strategy_id = self.__strategies.index(self.__current_strategy)
         if strategy_id < 0 or strategy_id+1 >= len(self.__strategies):
-            #print(self.__class__.__name__+"::_next_strategy", "got None")
+            print(self.__class__.__name__+"::_next_strategy", "got None")
             self.__current_strategy = None
             return False
         self.__current_strategy = self.__strategies[strategy_id+1]
@@ -300,7 +300,7 @@ class StrategyHunting(Strategy):
                 hunter._victim_stamp=0
                 move_at_point = hunter.victim.coord.copy()
         if move_at_point is not None and int(hunter.distance_to(move_at_point))>hunter.radius:
-            hunter.move_at(move_at_point, speed=theme.DRONE_SPEED)
+            hunter.move_at(move_at_point.copy(), speed=theme.DRONE_SPEED)
 
         # Собираем елериум пока не нашли жертву
         if hunter.victim is None and victim is None:
