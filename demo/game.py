@@ -211,8 +211,6 @@ class DestroyerDrone(DroneUnitWithStrategies):
     def __init__(self, **kwargs):
         super(DestroyerDrone, self).__init__(**kwargs)
         self._victim = None
-        #self._no_victim_strategy = False
-        self._victim_stamp = 0
         self._next_victim = None
         self._target_mship = None
         self._elerium_stock = None
