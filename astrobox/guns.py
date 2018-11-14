@@ -14,6 +14,7 @@ class ProjectileAnimation(object):
         self.__target = target
         self.__distance = distance
         self.__direction = direction
+        self.__initial_target_direction = target.direction
         self.__initial_ttl = ttl
         self.__ttl = ttl
 
@@ -45,11 +46,10 @@ class ProjectileAnimation(object):
             return
 
         # Были прикреплены к оппоненту, анимируем попадание
-        vector = Vector.from_direction(self.__target.direction + self.__direction, module=self.__distance)
-        newcoord = Point(self.__target.x + vector.x, self.__target.y + vector.y)
-        # Небольшое сглаживание, чтобы небыло телепортаций снаряда
-        self.__projectile.coord.x = newcoord.x if abs(self.__projectile.coord.x - newcoord.x) < 2 else (self.__projectile.coord.x + newcoord.x)/2
-        self.__projectile.coord.y = newcoord.y if abs(self.__projectile.coord.y - newcoord.y) < 2 else (self.__projectile.coord.y + newcoord.y)/2
+        direction = - self.__initial_target_direction + self.__target.direction + self.__direction
+        vector = Vector.from_direction(direction, module=self.__distance)
+        self.__projectile.coord.x = self.__target.x + vector.x
+        self.__projectile.coord.y = self.__target.y + vector.y
 
         if not self.is_alive:
             self.__projectile.scene.remove_object(self.__projectile)
@@ -136,7 +136,6 @@ class Projectile(GameObject):
         if not theme.DRONES_CAN_FIGHT:
             self.scene.remove_object(self)
             return
-        #print(self.__class__.__name__+"::on_born", PlasmaProjectile.max_distance)
         vector = Vector.from_direction(self._owner.direction, module=PlasmaProjectile.max_distance)
         point = self._owner.coord.copy() + vector
         super(Projectile, self).move_at(point, speed=self.__speed)
@@ -163,8 +162,7 @@ class Projectile(GameObject):
         self.state.stop()
         obj_status.damage_taken(theme.PROJECTILE_DAMAGE)
         self.__attached = self.animation(projectile=self, target=obj_status, distance=int(obj_status.distance_to(self)/2),
-                                              direction=nearest_angle_distance(obj_status.direction,
-                                                        Vector.from_points(obj_status.coord, self.coord).direction),
+                                              direction=Vector.from_points(obj_status.coord, self.coord).direction,
                                               ttl=self.__attached_ttl)
 
 class Gun(object):
