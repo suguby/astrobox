@@ -105,7 +105,6 @@ class StrategySequence(Strategy):
             return False
         strategy_id = self.__strategies.index(self.__current_strategy)
         if strategy_id < 0 or strategy_id+1 >= len(self.__strategies):
-            print(self.__class__.__name__+"::_next_strategy", "got None")
             self.__current_strategy = None
             return False
         self.__current_strategy = self.__strategies[strategy_id+1]
