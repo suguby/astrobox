@@ -106,6 +106,10 @@ class SpaceField(Scene):
 
         max_elerium = 0
         for i in range(asteroids_count):
+            # TODO: балансировка игрового процесса путем распределения елериума
+            payload = random.randint(theme.MIN_ASTEROID_ELERIUM, theme.MAX_ASTEROID_ELERIUM)
+            max_elerium += payload
+
             cell_number = random.choice(cell_numbers)
             cell_numbers.remove(cell_number)
             cell.x = (cell_number % cells_in_width) * cell.w
@@ -113,10 +117,10 @@ class SpaceField(Scene):
             dx = random.randint(0, jit_box.w)
             dy = random.randint(0, jit_box.h)
             pos = Point(field.x + cell.x + dx, field.y + cell.y + dy)
-            asteroid = Asteroid(coord=pos)
+
+            asteroid = Asteroid(coord=pos, elerium=payload)
             self.__asteroids.append(asteroid)
-            max_elerium += asteroid.cargo.payload
-            i += 1
+
         max_elerium = round(max_elerium * 1.5 / theme.TEAMS_COUNT, -2)
         if max_elerium < 1000:
             max_elerium = 1000

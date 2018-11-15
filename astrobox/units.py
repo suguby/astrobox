@@ -105,6 +105,7 @@ class DroneUnit(Unit):
         if self.__dead_flight_speed < 0.0:
             return;
         if self.__angle_of_death is None:
+            self.layer = 1
             self.__angle_of_death = random.randint(0, 359)
 
         x = self.__dead_flight_speed*math.sin(self.__angle_of_death)
@@ -150,14 +151,14 @@ class Asteroid(Unit):
     radius = 50
     selectable = False
     counter_attrs = dict(size=16, position=(0, 0), color=(255, 255, 255))
+    layer = 1
 
-    def __init__(self, max_payload=None, **kwargs):
+    def __init__(self, elerium=None, **kwargs):
         if "direction" not in kwargs:
             kwargs["direction"] = random.randint(0, 360)
-        max_elerium = random.randint(theme.MIN_ASTEROID_ELERIUM, theme.MAX_ASTEROID_ELERIUM)
-        self._cargo = Cargo(self, payload=max_elerium, max_payload=max_elerium)
+        self._cargo = Cargo(self, payload=elerium, max_payload=elerium)
         self.__sprite_num = random.randint(1, 5)
-        self._size = (max_elerium / theme.MIN_ASTEROID_ELERIUM) * .8
+        self._size = (elerium / theme.MIN_ASTEROID_ELERIUM) * .8
         super(Asteroid, self).__init__(**kwargs);
 
     @property
@@ -196,6 +197,7 @@ class MotherShip(Unit):
     radius = 75
     selectable = False
     counter_attrs = dict(size=22, position=(75, 135), color=(255, 255, 255))
+    layer = 1
 
     def __init__(self,  max_payload=0, **kwargs):
         super(MotherShip, self).__init__(**kwargs)
