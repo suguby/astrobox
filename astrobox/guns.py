@@ -6,55 +6,6 @@ from robogame_engine.geometry import Vector, Point, normalise_angle
 
 from astrobox.utils import nearest_angle_distance
 
-# Хранит информацию о цели и имееют свое время жизни для
-# для поддержания жизнеспособности Projectile с анимацией
-class ProjectileAnimation(object):
-    def __init__(self, projectile=None, target=None, distance=None, direction=None, ttl=0):
-        self.__projectile = projectile
-        self.__target = target
-        self.__distance = distance
-        self.__direction = direction
-        self.__initial_target_direction = target.direction
-        self.__initial_ttl = ttl
-        self.__ttl = ttl
-
-    @property
-    def zoom(self):
-        t = self.__initial_ttl
-        return (1.0*self.__ttl/t if self.__ttl>0 else 0.5)
-    @property
-    def target(self):
-        return self.__target
-    @property
-    def distance(self):
-        return self.__distance
-    @property
-    def direction(self):
-        return self.__direction
-    @property
-    def ttl(self):
-        return self.__ttl
-
-    @property
-    def is_alive(self):
-        return self.__ttl > 0
-
-    def game_step(self):
-        if self.is_alive:
-            self.__ttl = max(self.__ttl-1, 0)
-        else:
-            return
-
-        # Были прикреплены к оппоненту, анимируем попадание
-        direction = - self.__initial_target_direction + self.__target.direction + self.__direction
-        vector = Vector.from_direction(direction, module=self.__distance)
-        self.__projectile.coord.x = self.__target.x + vector.x
-        self.__projectile.coord.y = self.__target.y + vector.y
-
-        if not self.is_alive:
-            self.__projectile.scene.remove_object(self.__projectile)
-
-    
 # Projectile описывает поведение полета снаряда.
 class Projectile(GameObject):
     coord = None
@@ -63,9 +14,9 @@ class Projectile(GameObject):
     selectable = False
     layer = 3
 
-    animation = ProjectileAnimation
+    death_animation = None
     max_distance = 100.0
-
+    
     def __init__(self, owner=None, speed=None, ttl=None, attached_ttl=None, **kwargs):
         super(Projectile, self).__init__(**kwargs)
         self.__initial_coord = owner.coord.copy()
@@ -78,6 +29,10 @@ class Projectile(GameObject):
     @property
     def sprite_filename(self):
         return "not-found.png"
+
+    @property
+    def owner(self):
+        return self._owner
 
     @property
     def ttl(self):
@@ -161,9 +116,10 @@ class Projectile(GameObject):
         self.stop()
         self.state.stop()
         obj_status.damage_taken(theme.PROJECTILE_DAMAGE)
-        self.__attached = self.animation(projectile=self, target=obj_status, distance=int(obj_status.distance_to(self)/2),
-                                              direction=Vector.from_points(obj_status.coord, self.coord).direction,
-                                              ttl=self.__attached_ttl)
+        if self.death_animation is not None:
+            self.__attached = self.death_animation(projectile=self, target=obj_status, distance=int(obj_status.distance_to(self)/2),
+                                                   direction=Vector.from_points(obj_status.coord, self.coord).direction,
+                                                   ttl=self.__attached_ttl)
 
 class Gun(object):
     projectile = None
@@ -205,13 +161,70 @@ class PlasmaProjectile(Projectile):
     radius = 15
     max_distance = 580.0
     
+    # хранит информацию о цели и имееют свое время жизни для
+    # для поддержания жизнеспособности projectile с анимацией
+    class __DeathAnimation(object):
+        def __init__(self, projectile=None, target=None, distance=None, direction=None, ttl=0):
+            self.__projectile = projectile
+            self.__target = target
+            self.__distance = distance
+            self.__direction = direction
+            self.__initial_target_direction = target.direction
+            self.__initial_ttl = ttl
+            self.__ttl = ttl
+
+        @property
+        def zoom(self):
+            t = self.__initial_ttl
+            return (1.0*self.__ttl/t if self.__ttl>0 else 0.5)
+        @property
+        def sprite_filename(self):
+            return "teams/any_projectile_explosion.png"
+        @property
+        def target(self):
+            return self.__target
+        @property
+        def distance(self):
+            return self.__distance
+        @property
+        def direction(self):
+            return self.__direction
+        @property
+        def ttl(self):
+            return self.__ttl
+
+        @property
+        def is_alive(self):
+            return self.__ttl > 0
+
+        def game_step(self):
+            if self.is_alive:
+                self.__ttl = max(self.__ttl-1, 0)
+            else:
+                return
+
+            # Были прикреплены к оппоненту, анимируем попадание
+            direction = - self.__initial_target_direction + self.__target.direction + self.__direction
+            vector = Vector.from_direction(direction, module=self.__distance)
+            self.__projectile.coord.x = self.__target.x + vector.x
+            self.__projectile.coord.y = self.__target.y + vector.y
+
+            if not self.is_alive:
+                self.__projectile.scene.remove_object(self.__projectile)
+    # end __ProjectileDeathAnimation
+
+
+    death_animation = __DeathAnimation
+
     def __init__(self, **kwargs):
         super(PlasmaProjectile, self).__init__(speed=theme.PROJECTILE_SPEED,
                                                ttl=theme.PROJECTILE_TTL,
                                                attached_ttl=int(theme.PROJECTILE_TTL/4), **kwargs)
     @property
     def sprite_filename(self):
-        return "plasma_ball_small.png"
+        if self.is_alive or self.attached is None:
+            return "teams/{}/projectile.png".format(self.owner.team)
+        return self.attached.sprite_filename
 
     @property
     def zoom(self):
@@ -219,8 +232,13 @@ class PlasmaProjectile(Projectile):
             # Эффект попадания в цель
             return self.attached.zoom;
         else:
+            # эффект появления, чтобы снаряд не возникал из ниоткуда
+            showTime = 5
+            bornTime = theme.PROJECTILE_TTL-self.ttl
+            if bornTime < showTime:
+                return 1.0 * (bornTime/showTime)
             # Эффект растворения в космосе в конце дистанции 
-            return 0.5 if self.ttl > 10 else 0.5*self.ttl/10
+            return 1.0 if self.ttl > 10 else 1.0*self.ttl/10
 
 
 # Используемое оружие
