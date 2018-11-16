@@ -46,6 +46,7 @@ class DroneUnit(Unit):
 
     class __DeathAnimation(object):
         def __init__(self, owner):
+            self._owner = owner
             self.__sprites = ['teams/{}/blow_up_{}.png'.format(owner.team, i+1) for i in range(3)]
             self.__sprites.append('teams/any_drone_explosion.png')
             self.__sprites.append('teams/{}/drone_crashed.png'.format(owner.team))
@@ -58,7 +59,7 @@ class DroneUnit(Unit):
             if self.__sprites.index(self.__current_sprite) >= len(self.__sprites)-1:
                 return self.__current_sprite
             if self.__animation_frame < self.__animation_speed:
-                self.__animation_frame += 1
+                self.__animation_frame += self._owner.scene.game_speed
             else:
                 self.__animation_frame = 0
                 # переключиться на следующий
@@ -136,7 +137,7 @@ class DroneUnit(Unit):
         self.coord.x = min(theme.FIELD_WIDTH-self.radius, max(self.radius, self.coord.x+x))
         self.coord.y = min(theme.FIELD_HEIGHT-self.radius, max(self.radius, self.coord.y+y))
 
-        self.__dead_flight_speed -= theme.DRONE_DEAD_SPEED_DECELERATION
+        self.__dead_flight_speed -= theme.DRONE_DEAD_SPEED_DECELERATION*self.scene.game_speed
         super(DroneUnit, self).game_step();
 
     def game_step(self):
@@ -225,6 +226,7 @@ class MotherShip(Unit):
     class __DeathAnimation(object):
         def __init__(self, owner):
             assert owner.team is not None
+            self._owner = owner
             self.__sprites = ['motherships/{}/blow_up_{}.png'.format(owner.team, i+1) for i in range(2)]
             self.__sprites.append('motherships/any_mothership_explosion.png')
             self.__sprites.append('motherships/{}/crashed.png'.format(owner.team))
@@ -237,7 +239,7 @@ class MotherShip(Unit):
             if self.__sprites.index(self.__current_sprite) >= len(self.__sprites)-1:
                 return self.__current_sprite
             if self.__animation_frame < self.__animation_speed:
-                self.__animation_frame += 1
+                self.__animation_frame += self._owner.scene.game_speed
             else:
                 self.__animation_frame = 0
                 # переключиться на следующий

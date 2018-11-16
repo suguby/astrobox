@@ -199,7 +199,7 @@ class PlasmaProjectile(Projectile):
 
         def game_step(self):
             if self.is_alive:
-                self.__ttl = max(self.__ttl-1, 0)
+                self.__ttl = max(self.__ttl-self.__projectile._owner.scene.game_speed, 0)
             else:
                 return
 
