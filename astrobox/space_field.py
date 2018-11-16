@@ -104,12 +104,17 @@ class SpaceField(Scene):
         if theme.DEBUG:
             print("Shifted field", field)
 
-        max_elerium = 0
-        for i in range(asteroids_count):
-            # TODO: балансировка игрового процесса путем распределения елериума
+        # Генерируем количество элериума для астероидов
+        asteroid_payloads = []
+        for p in range(asteroids_count):
             payload = random.randint(theme.MIN_ASTEROID_ELERIUM, theme.MAX_ASTEROID_ELERIUM)
-            max_elerium += payload
+            asteroid_payloads.append(payload)
+        # Отсортируем по убыванию
+        asteroid_payloads.sort(key=lambda p: -p)
 
+        # Генерируем позиции астероидов
+        asteroid_coords = []
+        for i in range(asteroids_count):
             cell_number = random.choice(cell_numbers)
             cell_numbers.remove(cell_number)
             cell.x = (cell_number % cells_in_width) * cell.w
@@ -117,11 +122,20 @@ class SpaceField(Scene):
             dx = random.randint(0, jit_box.w)
             dy = random.randint(0, jit_box.h)
             pos = Point(field.x + cell.x + dx, field.y + cell.y + dy)
+            asteroid_coords.append(pos)
+        center_of_scene = Point(field.w/2, field.h/2)
+        # Отсортируем по удалению от центра карты. Делается для того чтобы обеспечить
+        # примерно равные условия для всех игроков, распределяя более объемные ресурсы
+        # ближе к центру, что дает больше возможностей к выбору стратегий. Дает некий игровой баланс.
+        # (например, постараться отхватить жирный кусок или подстрелить жаждущих наживы)
+        asteroid_coords.sort(key=lambda c: c.distance_to(center_of_scene))
 
-            asteroid = Asteroid(coord=pos, elerium=payload)
+        for i, pos in enumerate(asteroid_coords):
+            asteroid_payload = asteroid_payloads[i]
+            asteroid = Asteroid(coord=pos, elerium=asteroid_payload)
             self.__asteroids.append(asteroid)
 
-        max_elerium = round(max_elerium * 1.5 / theme.TEAMS_COUNT, -2)
+        max_elerium = round(sum(asteroid_payloads) * 1.5 / theme.TEAMS_COUNT, -2)
         if max_elerium < 1000:
             max_elerium = 1000
 
