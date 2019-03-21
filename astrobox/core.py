@@ -37,7 +37,8 @@ class Dron(AstroUnit):
             try:
                 self.__my_mathership = self.scene.get_mathership(team=self.team)
             except IndexError:
-                raise Exception("No mathership for {} - check matherships_count!".format(self.__class__.__name__))
+                raise Exception("No mathership for {} "
+                                "- check matherships_count!".format(self.__class__.__name__))
         return self.__my_mathership
 
     @property
@@ -90,39 +91,6 @@ class Dron(AstroUnit):
 
     def on_stop_at_mathership(self, mathership):
         pass
-
-    # def sting(self, other):
-    #     """
-    #     Укусить другую пчелу
-    #     """
-    #     if self._dead:
-    #         return
-    #     if isinstance(other, Bee):
-    #         other.stung(self, self.__reduce_health)
-    #
-    # def stung(self, other, kickback):
-    #     """
-    #     Принять укус, если кусающий близко.
-    #     Здоровье кусающего тоже уменьшается через kickback
-    #     """
-    #     if self.distance_to(other) <= self.radius:
-    #         try:
-    #             kickback()
-    #             self.__reduce_health()
-    #         except TypeError:
-    #             # flashback не может быть вызвана
-    #             pass
-
-    # def __reduce_health(self):
-    #     if self.distance_to(self.my_beehive) > theme.BEEHIVE_SAFE_DISTANCE:
-    #         self._health -= theme.STING_POWER
-    #         if self._health < 0:
-    #             self.__die()
-    #
-    # def __die(self):
-    #     self.rotate_mode = ROTATE_FLIP_BOTH
-    #     self.move_at(Point(x=self.x + random.randint(-20, 20), y=40 + random.randint(-10, 20)))
-    #     self._dead = True
 
     def move_at(self, target, speed=None):
         if not self.is_alive:

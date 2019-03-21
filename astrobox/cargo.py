@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-from robogame_engine import GameObject
 from robogame_engine.theme import theme
+
 
 class Cargo(object):
     __payload = 0
     __max_volume = 0
+
     def __init__(self, owner, payload=0, max_payload=1):
         self.__owner = owner
-        if (max_payload<1):
-            raise Exception("max_payload should be greater than 0");
+        if max_payload < 1:
+            raise Exception("max_payload should be greater than 0")
         self.__payload = min(payload, max_payload)
         self.__max_payload = max_payload
 
@@ -18,7 +19,7 @@ class Cargo(object):
     def _clip_payload(self, batch):
         if self.__payload < batch:
             batch = self.__payload
-        self.__payload-=batch
+        self.__payload -= batch
         return batch
 
     def _transfer_payload(self, batch, cargo_from):
@@ -55,7 +56,7 @@ class CargoTransition(object):
     selectable = False
 
     def __init__(self, cargo_from=None, cargo_to=None):
-        super(CargoTransition, self).__init__();
+        super(CargoTransition, self).__init__()
         self.cargo_from = cargo_from
         self.cargo_to = cargo_to
         self.__distance = theme.CARGO_TRANSITION_DISTANCE
@@ -71,22 +72,11 @@ class CargoTransition(object):
         return self.__done
 
     def game_step(self):
-        if self.cargo_from.owner.team is not None and self.cargo_to.owner.team is not None and \
-           self.cargo_from.owner.team != self.cargo_to.owner.team:
-            # Не можем загружать из чужих живых объектов
-            if self.cargo_from.owner.is_alive:
-                self.__done = True
-                return
-        # Неживые объекты не могут принимать
-        if not self.cargo_to.owner.is_alive:
-            self.__done = True
-            return
         # Ограничиваем дистанцию переноса
         if self.cargo_to.owner.distance_to(self.cargo_from.owner) > self.__distance:
             self.__done = True
-            return 
-        # Берем максимально возможный кусок который
-        # можем переместить за такт
+            return
+        # Берем максимально возможный кусок который можем переместить за такт
         batch = min(self.__transition_speed,
                     self.__transition_limit - self.__batch_processed,
                     self.cargo_to.free_space, self.cargo_from.payload)
@@ -94,4 +84,3 @@ class CargoTransition(object):
             self.__done = True
             return
         self.__batch_processed += self.cargo_to._transfer_payload(batch, self.cargo_from)
-

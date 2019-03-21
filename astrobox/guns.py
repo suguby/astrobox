@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from robogame_engine import GameObject
 from robogame_engine.constants import ROTATE_TURNING
+from robogame_engine.geometry import Vector
 from robogame_engine.theme import theme
-from robogame_engine.geometry import Vector, Point, normalise_angle
 
-from astrobox.utils import nearest_angle_distance
 
-# Projectile описывает поведение полета снаряда.
 class Projectile(GameObject):
+    """описывает поведение полета снаряда."""
     coord = None
     rotate_mode = ROTATE_TURNING
     radius = 1
@@ -16,12 +15,12 @@ class Projectile(GameObject):
 
     death_animation = None
     max_distance = 100.0
-    
+
     def __init__(self, owner=None, speed=None, ttl=None, attached_ttl=None, **kwargs):
         super(Projectile, self).__init__(**kwargs)
         self.__initial_coord = owner.coord.copy()
         self._owner = owner
-        self.__ttl = ttl 
+        self.__ttl = ttl
         self.__speed = speed
         self.__attached = None
         self.__attached_ttl = attached_ttl
@@ -41,9 +40,10 @@ class Projectile(GameObject):
     @property
     def has_hit(self):
         return self.__attached is not None
+
     @property
     def attached(self):
-        return self.__attached;
+        return self.__attached
 
     @property
     def zoom(self):
@@ -64,7 +64,7 @@ class Projectile(GameObject):
             return
 
         if self.is_alive:
-            self.__ttl = max(self.__ttl-1, 0)
+            self.__ttl = max(self.__ttl - 1, 0)
             # Обычный цикл полета пока живы
             super(Projectile, self).game_step()
         else:
@@ -72,8 +72,6 @@ class Projectile(GameObject):
             # Используем прямой вызов останова, вместо события
             self.state.stop()
             # Промах, никакой анимации
-            #atdist = Vector.from_points(self.coord, self.__initial_coord)
-            #print(self.__class__, "::died at distance", atdist.module)
             self.scene.remove_object(self)
 
     def turn_to(self, target, speed=None):
@@ -117,9 +115,13 @@ class Projectile(GameObject):
         self.state.stop()
         obj_status.damage_taken(theme.PROJECTILE_DAMAGE)
         if self.death_animation is not None:
-            self.__attached = self.death_animation(projectile=self, target=obj_status, distance=int(obj_status.distance_to(self)/2),
-                                                   direction=Vector.from_points(obj_status.coord, self.coord).direction,
-                                                   ttl=self.__attached_ttl)
+            self.__attached = self.death_animation(
+                projectile=self, target=obj_status,
+                distance=int(obj_status.distance_to(self) / 2),
+                direction=Vector.from_points(obj_status.coord, self.coord).direction,
+                ttl=self.__attached_ttl
+            )
+
 
 class Gun(object):
     projectile = None
@@ -152,18 +154,20 @@ class Gun(object):
 
     def game_step(self):
         # Восстановление после выстрела
-        if self._cooldown>0:
-            self._cooldown = max(self._cooldown-theme.PLASMAGUN_COOLDOWN_RATE, 0)
+        if self._cooldown > 0:
+            self._cooldown = max(self._cooldown - theme.PLASMAGUN_COOLDOWN_RATE, 0)
 
 
-# Снаряд используемый снаряд
 class PlasmaProjectile(Projectile):
+    """Используемый снаряд"""
     radius = 15
     max_distance = 580.0
-    
-    # хранит информацию о цели и имееют свое время жизни для
-    # для поддержания жизнеспособности projectile с анимацией
+
     class __DeathAnimation(object):
+        """
+            хранит информацию о цели и имееют свое время жизни для
+            для поддержания жизнеспособности projectile с анимацией
+        """
         def __init__(self, projectile=None, target=None, distance=None, direction=None, ttl=0):
             self.__projectile = projectile
             self.__target = target
@@ -176,19 +180,24 @@ class PlasmaProjectile(Projectile):
         @property
         def zoom(self):
             t = self.__initial_ttl
-            return (1.0*self.__ttl/t if self.__ttl>0 else 0.5)
+            return 1.0 * self.__ttl / t if self.__ttl > 0 else 0.5
+
         @property
         def sprite_filename(self):
             return "teams/any_projectile_explosion.png"
+
         @property
         def target(self):
             return self.__target
+
         @property
         def distance(self):
             return self.__distance
+
         @property
         def direction(self):
             return self.__direction
+
         @property
         def ttl(self):
             return self.__ttl
@@ -199,7 +208,7 @@ class PlasmaProjectile(Projectile):
 
         def game_step(self):
             if self.is_alive:
-                self.__ttl = max(self.__ttl-self.__projectile._owner.scene.game_speed, 0)
+                self.__ttl = max(self.__ttl - self.__projectile._owner.scene.game_speed, 0)
             else:
                 return
 
@@ -211,15 +220,16 @@ class PlasmaProjectile(Projectile):
 
             if not self.is_alive:
                 self.__projectile.scene.remove_object(self.__projectile)
-    # end __ProjectileDeathAnimation
-
 
     death_animation = __DeathAnimation
 
     def __init__(self, **kwargs):
-        super(PlasmaProjectile, self).__init__(speed=theme.PROJECTILE_SPEED,
-                                               ttl=theme.PROJECTILE_TTL,
-                                               attached_ttl=int(theme.PROJECTILE_TTL/4), **kwargs)
+        super(PlasmaProjectile, self).__init__(
+            speed=theme.PROJECTILE_SPEED,
+            ttl=theme.PROJECTILE_TTL,
+            attached_ttl=int(theme.PROJECTILE_TTL / 4), **kwargs
+        )
+
     @property
     def sprite_filename(self):
         if self.is_alive or self.attached is None:
@@ -230,15 +240,15 @@ class PlasmaProjectile(Projectile):
     def zoom(self):
         if self.has_hit:
             # Эффект попадания в цель
-            return self.attached.zoom;
+            return self.attached.zoom
         else:
             # эффект появления, чтобы снаряд не возникал из ниоткуда
             showTime = 5
-            bornTime = theme.PROJECTILE_TTL-self.ttl
+            bornTime = theme.PROJECTILE_TTL - self.ttl
             if bornTime < showTime:
-                return 1.0 * (bornTime/showTime)
+                return 1.0 * (bornTime / showTime)
             # Эффект растворения в космосе в конце дистанции 
-            return 1.0 if self.ttl > 10 else 1.0*self.ttl/10
+            return 1.0 if self.ttl > 10 else 1.0 * self.ttl / 10
 
 
 # Используемое оружие
@@ -247,6 +257,3 @@ class PlasmaGun(Gun):
 
     def __init__(self, owner=None):
         super(PlasmaGun, self).__init__(owner=owner)
-
-        
-

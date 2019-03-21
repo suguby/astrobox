@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
-import random
 
-from robogame_engine.theme import theme
-from robogame_engine.geometry import Point, Vector
-
-from astrobox.guns import PlasmaGun
 from astrobox.space_field import SpaceField
 from astrobox.units import DroneUnit, Unit
 from astrobox.utils import nearest_angle_distance
-
 from demo.strategies import *
+from robogame_engine.geometry import Vector
+from robogame_engine.theme import theme
+
 
 class DroneUnitWithStrategies(DroneUnit):
     def __init__(self, **kwargs):
@@ -21,7 +18,7 @@ class DroneUnitWithStrategies(DroneUnit):
             for s in self.__strategies:
                 if s.group == strategy.group:
                     self.__strategies.remove(s)
-        self.__strategies.append( strategy )
+        self.__strategies.append(strategy)
 
     def clear_strategies(self):
         self.__strategies = []
@@ -38,14 +35,15 @@ class DroneUnitWithStrategies(DroneUnit):
             s.game_step()
             break;
 
-    # @brief elerium_stocks возвращает все объекты мира из которых можно добывать ресурсы
     @property
     def elerium_stocks(self):
+        """возвращает все объекты мира из которых можно добывать ресурсы """
         return [es for es in self.scene.get_objects_by_type(Unit) if hasattr(es, 'cargo') and not es.is_alive]
-    
-    # Позволяет обращаться к чистому обработчику из стратегий
+
     def native_game_step(self):
+        """Позволяет обращаться к чистому обработчику из стратегий """
         super(DroneUnitWithStrategies, self).game_step()
+
 
 class WorkerDrone(DroneUnitWithStrategies):
     counter_attrs = dict(size=22, position=(75, 135), color=(255, 255, 255))
@@ -64,6 +62,7 @@ class WorkerDrone(DroneUnitWithStrategies):
     def on_born(self):
         super(WorkerDrone, self).on_born()
         self.append_strategy(StrategyHarvesting(unit=self))
+
 
 class GreedyDrone(WorkerDrone):
 
@@ -103,7 +102,7 @@ class HunterDrone(GreedyDrone):
         self._hunting_strategy = None
         self._approach_strategy = None
         self._victim = None
-        #self._no_victim_strategy = False
+        # self._no_victim_strategy = False
         self._victim_stamp = 0
         self._next_victim = None
         self.substrategy = None
@@ -132,7 +131,7 @@ class HunterDrone(GreedyDrone):
                 elerium_stocks.remove(drone.elerium_stock)
         if elerium_stocks:
             elerium_stocks = sorted(elerium_stocks, key=lambda x: x.distance_to(self))
-            return elerium_stocks[0];
+            return elerium_stocks[0]
 
         # Потом с астероидов
         elerium_stocks = [asteriod for asteriod in self.unit.scene.asteroids if asteriod.cargo.payload > 0]
@@ -149,7 +148,7 @@ class HunterDrone(GreedyDrone):
     def set_victim(self, victim):
         self._next_victim = None
         self._victim = victim
-        self._victim_stamp=0
+        self._victim_stamp = 0
         if not self.substrategy.is_finished:
             self.stop()
             self.state.stop()
@@ -158,9 +157,9 @@ class HunterDrone(GreedyDrone):
 
     @property
     def is_unloading(self):
-        return self.cargo.is_full or (self.substrategy is not None and \
-                self.substrategy.current_strategy_id == "approach&unload")
-    
+        return self.cargo.is_full or (self.substrategy is not None and
+                                      self.substrategy.current_strategy_id == "approach&unload")
+
     def game_step(self):
         if not self.have_gun:
             super(HunterDrone, self).game_step()
@@ -174,22 +173,21 @@ class HunterDrone(GreedyDrone):
             vector = Vector.from_points(self.coord, self.victim.coord,
                                         module=self.gun.shot_distance)
             if int(self.distance_to(self.victim)) < 1 or (
-                    self.distance_to(self.victim) < vector.module \
-                    and abs(nearest_angle_distance(vector.direction, self.direction))<7
-                ):
+                    self.distance_to(self.victim) < vector.module
+                    and abs(nearest_angle_distance(vector.direction, self.direction)) < 7
+            ):
                 self.gun.shot(self.victim)
         else:
-            enemies = [enemy for enemy in self.scene.drones \
-                             if enemy.team != self.team and enemy.is_alive and \
-                             enemy.distance_to(self) < self.gun.shot_distance]
+            enemies = [enemy for enemy in self.scene.drones
+                       if enemy.team != self.team and enemy.is_alive and
+                       enemy.distance_to(self) < self.gun.shot_distance]
             enemie = sorted(enemies, key=lambda x: -x.cargo.payload)
             for enemy in enemies:
                 vector = Vector.from_points(self.coord, enemy.coord)
                 if abs(nearest_angle_distance(vector.direction, self.direction)) < 7:
                     self.gun.shot(enemy)
                     break
-        pass #
-
+        pass
 
 
 class RunnerDrone(DroneUnitWithStrategies):
@@ -204,6 +202,7 @@ class RunnerDrone(DroneUnitWithStrategies):
         super(RunnerDrone, self).game_step()
         if self.is_strategy_finished():
             self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
+
 
 class DestroyerDrone(DroneUnitWithStrategies):
     _hunters = []
@@ -238,14 +237,14 @@ class DestroyerDrone(DroneUnitWithStrategies):
 if __name__ == '__main__':
     space_field = SpaceField(
         name="Space war",
-        speed=1,
+        speed=4,
         field=(1600, 800),
         asteroids_count=20,
     )
 
-    teamA = [WorkerDrone()    for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamB = [GreedyDrone()    for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamC = [HunterDrone()    for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamA = [WorkerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamB = [GreedyDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamC = [HunterDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
     teamD = [DestroyerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
 
     space_field.go()

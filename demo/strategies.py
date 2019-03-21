@@ -2,8 +2,9 @@
 import random
 
 from robogame_engine.theme import theme
-from robogame_engine.geometry import Point, Vector, normalise_angle
+
 from astrobox.cargo import CargoTransition
+
 
 class Strategy(object):
     def __init__(self, unit=None, id=None, group=None, is_group_unique=False):
@@ -15,12 +16,15 @@ class Strategy(object):
     @property
     def unit(self):
         return self.__unit
+
     @property
     def id(self):
         return self.__id
+
     @property
     def group(self):
         return self.__group
+
     @property
     def is_group_unique(self):
         return self.__group_unique
@@ -38,6 +42,7 @@ class Strategy(object):
     def on_stop(self):
         pass
 
+
 # Атомарные стратегии
 class StrategyCargoLoading(Strategy):
     def __init__(self, cargo_transition, **kwargs):
@@ -45,11 +50,14 @@ class StrategyCargoLoading(Strategy):
         kwargs['group'] = "cargo"
         super(StrategyCargoLoading, self).__init__(kwargs)
         self.__transition = cargo_transition
+
     @property
     def is_finished(self):
         return self.__transition.is_finished
+
     def game_step(self):
         self.__transition.game_step()
+
 
 class StrategyCargoUnloading(Strategy):
     def __init__(self, cargo_transition, **kwargs):
@@ -57,11 +65,14 @@ class StrategyCargoUnloading(Strategy):
         kwargs['group'] = "cargo"
         super(StrategyCargoUnloading, self).__init__(**kwargs)
         self.__transition = cargo_transition
+
     @property
     def is_finished(self):
         return self.__transition.is_finished
+
     def game_step(self):
         self.__transition.game_step()
+
 
 class StrategyApproach(Strategy):
     def __init__(self, target_point=None, distance=0, condition=None, **kwargs):
@@ -93,10 +104,11 @@ class StrategyApproach(Strategy):
             self.__last_distance = new_distance
             self.unit.move_at(self._target_point.copy(), speed=theme.DRONE_SPEED)
 
+
 # Комбинированные стратегии
 class StrategySequence(Strategy):
     def __init__(self, *strategies, **kwargs):
-        super(StrategySequence, self).__init__(**kwargs);
+        super(StrategySequence, self).__init__(**kwargs)
         self.__strategies = strategies
         self.__current_strategy = self.__strategies[0]
 
@@ -104,18 +116,18 @@ class StrategySequence(Strategy):
         if self.__current_strategy is None:
             return False
         strategy_id = self.__strategies.index(self.__current_strategy)
-        if strategy_id < 0 or strategy_id+1 >= len(self.__strategies):
+        if strategy_id < 0 or strategy_id + 1 >= len(self.__strategies):
             self.__current_strategy = None
             return False
-        self.__current_strategy = self.__strategies[strategy_id+1]
-        #print(self.__class__.__name__+"::_next_strategy", self.__current_strategy.__class__.__name__)
+        self.__current_strategy = self.__strategies[strategy_id + 1]
+        # print(self.__class__.__name__+"::_next_strategy", self.__current_strategy.__class__.__name__)
         return True
 
     def __str__(self):
         strout = "{} {} {}(".format(self.__class__.__name__, self.unit.__class__.__name__, self.unit)
         for s in self.__strategies:
-            strout+= ("{}" if self.__strategies.index(s) == 0 else ", {}").format(str(s))
-        return strout+")"
+            strout += ("{}" if self.__strategies.index(s) == 0 else ", {}").format(str(s))
+        return strout + ")"
 
     @property
     def is_finished(self):
@@ -129,30 +141,33 @@ class StrategySequence(Strategy):
                 return
         self.__current_strategy.game_step()
 
+
 class StrategyApproachAndLoad(StrategySequence):
     def __init__(self, unit=None, target_unit=None, distance=None, **kwargs):
         if distance is None:
             distance = theme.LOAD_DISTANCE
         super(StrategyApproachAndLoad, self).__init__(
-                StrategyApproach(unit=unit, target_point=target_unit.coord, distance=distance, condition=self.check_target_have_elerium),
-                StrategyCargoLoading(CargoTransition(cargo_from=target_unit.cargo, cargo_to=unit.cargo),
-                                                     unit=unit, is_group_unique=True),
-                unit=unit, id="approach&load", group="approach", is_group_unique=True);
+            StrategyApproach(unit=unit, target_point=target_unit.coord, distance=distance,
+                             condition=self.check_target_have_elerium),
+            StrategyCargoLoading(CargoTransition(cargo_from=target_unit.cargo, cargo_to=unit.cargo),
+                                 unit=unit, is_group_unique=True),
+            unit=unit, id="approach&load", group="approach", is_group_unique=True)
         self.__target_unit = target_unit
 
     def check_target_have_elerium(self):
-        #print (self.__class__, "::check_target_have_elerium")
+        # print (self.__class__, "::check_target_have_elerium")
         return self.__target_unit.cargo.payload > 0
 
 
 class StrategyApproachAndUnload(StrategySequence):
     def __init__(self, unit=None, target_unit=None, distance=0, **kwargs):
         super(StrategyApproachAndUnload, self).__init__(
-                StrategyApproach(unit=unit, target_point=target_unit.coord, distance=distance),
-                StrategyCargoUnloading(CargoTransition(cargo_from=unit.cargo, cargo_to=target_unit.cargo),
-                                                       unit=unit, is_group_unique=True),
-                unit=unit, id="approach&unload", group="approach", is_group_unique=True)
+            StrategyApproach(unit=unit, target_point=target_unit.coord, distance=distance),
+            StrategyCargoUnloading(CargoTransition(cargo_from=unit.cargo, cargo_to=target_unit.cargo),
+                                   unit=unit, is_group_unique=True),
+            unit=unit, id="approach&unload", group="approach", is_group_unique=True)
         self.__cargo_unloading = None
+
 
 # Комплексные стратегии
 class StrategyHarvesting(Strategy):
@@ -176,7 +191,7 @@ class StrategyHarvesting(Strategy):
 
     def get_nearest_elerium_stock(self):
         elerium_stocks = [asteriod for asteriod in self.unit.scene.asteroids if asteriod.cargo.payload > 0]
-        elerium_stocks+= [drone for drone in self.unit.scene.drones if not drone.is_alive and drone.cargo.payload > 0]
+        elerium_stocks += [drone for drone in self.unit.scene.drones if not drone.is_alive and drone.cargo.payload > 0]
         for drone in self.unit.teammates:
             if drone.elerium_stock is not None and \
                     not drone.cargo.is_full and \
@@ -190,11 +205,11 @@ class StrategyHarvesting(Strategy):
 
     def game_step(self):
         # Даем возможность переопределять выбор источника elerium'а
-        nearest_calc = self.unit if ('get_nearest_elerium_stock' in self.unit.__dict__) else self;
+        nearest_calc = self.unit if ('get_nearest_elerium_stock' in self.unit.__dict__) else self
         if self.__substrategy is None or self.__substrategy.is_finished:
             if self.unit.cargo.is_full:
                 self.unit.set_elerium_stock(None)
-                self.__substrategy = StrategyApproachAndUnload(unit=self.unit, target_unit=self.unit.mothership());
+                self.__substrategy = StrategyApproachAndUnload(unit=self.unit, target_unit=self.unit.mothership())
             else:
                 near_elerium_stock = nearest_calc.get_nearest_elerium_stock()
                 if near_elerium_stock is not None:
@@ -203,12 +218,14 @@ class StrategyHarvesting(Strategy):
                 else:
                     if self.unit.cargo.payload > 0 and not self.unit.mothership().cargo.is_full:
                         self.unit.set_elerium_stock(None)
-                        self.__substrategy = StrategyApproachAndUnload(unit=self.unit, target_unit=self.unit.mothership());
+                        self.__substrategy = StrategyApproachAndUnload(unit=self.unit,
+                                                                       target_unit=self.unit.mothership())
                     else:
                         # Делаем видимость загруженности дрона работой
-                        self.__substrategy = StrategyApproach(unit=self.unit, target_point=self.anyAsteroid().coord);
+                        self.__substrategy = StrategyApproach(unit=self.unit, target_point=self.anyAsteroid().coord)
         if self.__substrategy is not None:
             self.__substrategy.game_step()
+
 
 class StrategyHunting(Strategy):
     _teams_strategies = {}
@@ -216,7 +233,8 @@ class StrategyHunting(Strategy):
     @classmethod
     def getTeamStrategy(cls, team, hunter):
         if team not in cls._teams_strategies:
-            cls._teams_strategies[team] = StrategyHunting(unit=hunter, id="hunting", group="hunting", is_group_unique=True)
+            cls._teams_strategies[team] = StrategyHunting(unit=hunter, id="hunting", group="hunting",
+                                                          is_group_unique=True)
         return cls._teams_strategies[team]
 
     def __init__(self, **kwargs):
@@ -234,7 +252,8 @@ class StrategyHunting(Strategy):
             return hunter.victim
 
         # Все дроны оппонентов с непустым карго
-        enemies = [drone for drone in hunter.scene.drones if drone.team != hunter.team and drone.is_alive and drone.cargo.payload > 0]
+        enemies = [drone for drone in hunter.scene.drones if
+                   drone.team != hunter.team and drone.is_alive and drone.cargo.payload > 0]
         # Дроны оппонетнов дальше, чем дистанция до их mothership-а
         enemies = [enemy for enemy in enemies if enemy.distance_to(enemy.mothership()) > theme.MOTHERSHIP_SAFE_DISTANCE]
         for mate in self._hunters:
@@ -250,21 +269,22 @@ class StrategyHunting(Strategy):
         if not hasattr(hunter, 'substrategy') or hunter.substrategy is None:
             hunter.substrategy = StrategyHarvesting(unit=hunter)
 
-        if hunter.victim is not None and (not hunter.victim.is_alive or \
-                int(hunter.victim.distance_to(hunter.victim.mothership())) < theme.MOTHERSHIP_HEALING_DISTANCE):
+        if hunter.victim is not None and (not hunter.victim.is_alive or
+                                          int(hunter.victim.distance_to(
+                                              hunter.victim.mothership())) < theme.MOTHERSHIP_HEALING_DISTANCE):
             hunter._victim = None
-            hunter._victim_stamp=0
+            hunter._victim_stamp = 0
 
         move_at_point = None
-        DRONE_VICTIM_FOCUS_TIME=4
+        DRONE_VICTIM_FOCUS_TIME = 4
         if hunter.victim is not None:
             # Счетчик повторного поиска жертвы
-            hunter._victim_stamp = min(hunter._victim_stamp+1, DRONE_VICTIM_FOCUS_TIME)
+            hunter._victim_stamp = min(hunter._victim_stamp + 1, DRONE_VICTIM_FOCUS_TIME)
 
         # Разгрузимся, чтобы не потерять нажитое
         if hunter.is_unloading:
             # Собираем елериум пока не нашли жертву
-            #print(self.__class__.__name__+"::game_step", "bringing elerium to mothership")
+            # print(self.__class__.__name__+"::game_step", "bringing elerium to mothership")
             hunter.substrategy.game_step()
             return
 
@@ -273,7 +293,6 @@ class StrategyHunting(Strategy):
             if hunter.victim is None:
                 move_at_point = hunter.set_victim(hunter._next_victim)
 
-
         # Выберем ближашего свободного союзника
         victim = None
         while True:
@@ -281,7 +300,8 @@ class StrategyHunting(Strategy):
             if victim is None:
                 break
             victim_distance = victim.distance_to(hunter)
-            closertm = [mate for mate in hunter.teammates if mate.victim is None and mate.distance_to(victim) < victim_distance]
+            closertm = [mate for mate in hunter.teammates if
+                        mate.victim is None and mate.distance_to(victim) < victim_distance]
             closertm = [mate for mate in closertm if mate._next_victim is None and not mate.is_unloading]
             if not closertm:
                 # нет никого свобожного ближе
@@ -294,16 +314,17 @@ class StrategyHunting(Strategy):
         if is_new_victim:
             move_at_point = hunter.set_victim(victim)
         elif hunter.victim is not None:
-            if hunter.state.target_point != hunter.victim.coord and hunter._victim_stamp>=DRONE_VICTIM_FOCUS_TIME:
+            if hunter.state.target_point != hunter.victim.coord and hunter._victim_stamp >= DRONE_VICTIM_FOCUS_TIME:
                 # Обновим вектор движения раз в несколько циклов
-                hunter._victim_stamp=0
+                hunter._victim_stamp = 0
                 move_at_point = hunter.victim.coord.copy()
-        if move_at_point is not None and int(hunter.distance_to(move_at_point))>hunter.radius:
+        if move_at_point is not None and int(hunter.distance_to(move_at_point)) > hunter.radius:
             hunter.move_at(move_at_point.copy(), speed=theme.DRONE_SPEED)
 
         # Собираем елериум пока не нашли жертву
         if hunter.victim is None and victim is None:
             hunter.substrategy.game_step()
+
 
 class StrategyDestroyer(Strategy):
     def __init__(self, **kwargs):
@@ -314,7 +335,8 @@ class StrategyDestroyer(Strategy):
         self.__substrategy = None
         ms = self.nearest_enemy_mothership()
         if ms is not None:
-            self.__substrategy = StrategyApproach(unit=self.unit, target_point=ms.coord.copy(), distance=self.unit.gun.shot_distance)
+            self.__substrategy = StrategyApproach(unit=self.unit, target_point=ms.coord.copy(),
+                                                  distance=self.unit.gun.shot_distance)
         self._target_unit = ms
         assert self.unit is not None
         # Требуется для StrategyHarvesting
@@ -345,10 +367,10 @@ class StrategyDestroyer(Strategy):
         if self._target_unit is not None and not self._target_unit.is_alive:
             ms = self.nearest_enemy_mothership()
             if ms is not None:
-                self.__substrategy = StrategyApproach(unit=self.unit, target_point=ms.coord.copy(), distance=self.unit.gun.shot_distance)
+                self.__substrategy = StrategyApproach(unit=self.unit, target_point=ms.coord.copy(),
+                                                      distance=self.unit.gun.shot_distance)
             self._target_unit = ms
             return
 
         if self._target_unit is None:
             self.__done = True
-

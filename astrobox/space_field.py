@@ -32,6 +32,7 @@ class SpaceField(Scene):
     check_collisions = False
     detect_overlaps = True
     _CELL_JITTER = 0.7
+
     # _HONEY_SPEED_FACTOR = 0.02
 
     def __init__(self, *args, **kwargs):
@@ -67,7 +68,7 @@ class SpaceField(Scene):
         field.reduce(dw=MotherShip.radius * 2, dh=MotherShip.radius * 2)
         if self.teams_count >= 2:
             field.reduce(dw=MotherShip.radius * 2)
-        #if self.teams_count >= 3:
+        # if self.teams_count >= 3:
         #    field.reduce(dh=MotherShip.radius * 2)
         if field.w < MotherShip.radius or field.h < MotherShip.radius:
             raise Exception("Too little field...")
@@ -123,7 +124,7 @@ class SpaceField(Scene):
             dy = random.randint(0, jit_box.h)
             pos = Point(field.x + cell.x + dx, field.y + cell.y + dy)
             asteroid_coords.append(pos)
-        center_of_scene = Point(field.w/2, field.h/2)
+        center_of_scene = Point(field.w / 2, field.h / 2)
         # Отсортируем по удалению от центра карты. Делается для того чтобы обеспечить
         # примерно равные условия для всех игроков, распределяя более объемные ресурсы
         # ближе к центру, что дает больше возможностей к выбору стратегий. Дает некий игровой баланс.
@@ -153,7 +154,7 @@ class SpaceField(Scene):
             drone.coord = drone.mothership().coord.copy()
 
     def get_mothership(self, team):
-        return self.__motherships.get(team);
+        return self.__motherships.get(team)
 
     @property
     def drones(self):
