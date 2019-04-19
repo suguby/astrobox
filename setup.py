@@ -28,6 +28,6 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
-        'robogame_engine<0.9,>=0.8',
+        'robogame_engine==0.9.0',
     ]
 )
