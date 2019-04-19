@@ -70,7 +70,7 @@ class GreedyDrone(WorkerDrone):
         super(GreedyDrone, self).__init__(**kwargs)
 
     def get_nearest_elerium_stock(self):
-        elerium_stocks = [es for es in self.scene.elerium_stocks if es.cargo.payload > 0]
+        elerium_stocks = [es for es in self.scene.asteroids if es.cargo.payload > 0]
         for drone in self.teammates:
             if drone.elerium_stock is not None and \
                     not drone.cargo.is_full and \
@@ -123,8 +123,9 @@ class HunterDrone(GreedyDrone):
 
     def get_nearest_elerium_stock(self):
         # Сперва сбор элериума с жертв
-        elerium_stocks = [drone for drone in self.unit.scene.drones if not drone.is_alive and drone.cargo.payload > 0]
-        for drone in self.unit.teammates:
+        elerium_stocks = [drone for drone in self.scene.drones
+                          if not drone.is_alive and drone.cargo.payload > 0]
+        for drone in self.teammates:
             if drone.elerium_stock is not None and \
                     not drone.cargo.is_full and \
                     drone.elerium_stock in elerium_stocks:
@@ -192,16 +193,16 @@ class HunterDrone(GreedyDrone):
 
 class RunnerDrone(DroneUnitWithStrategies):
 
-    def anyAsteroid(self):
+    def any_asteroid(self):
         return random.choice(self.scene.asteroids)
 
     def on_born(self):
-        self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
+        self.append_strategy(StrategyApproach(unit=self, target_point=self.any_asteroid().coord, distance=0))
 
     def game_step(self):
         super(RunnerDrone, self).game_step()
         if self.is_strategy_finished():
-            self.append_strategy(StrategyApproach(unit=self, target_point=self.anyAsteroid().coord, distance=0))
+            self.append_strategy(StrategyApproach(unit=self, target_point=self.any_asteroid().coord, distance=0))
 
 
 class DestroyerDrone(DroneUnitWithStrategies):
@@ -240,6 +241,7 @@ if __name__ == '__main__':
         speed=4,
         field=(1600, 800),
         asteroids_count=20,
+        # can_fight=False,
     )
 
     teamA = [WorkerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]

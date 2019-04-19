@@ -33,25 +33,19 @@ class SpaceField(Scene):
     detect_overlaps = True
     _CELL_JITTER = 0.7
 
-    # _HONEY_SPEED_FACTOR = 0.02
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, can_fight=False, *args, **kwargs):
         self.__motherships = {}
         self.__asteroids = []
         self.__drones = []
         if 'theme_mod_path' not in kwargs:
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
         super(SpaceField, self).__init__(*args, **kwargs)
+        theme.DRONES_CAN_FIGHT = can_fight
 
     def prepare(self, asteroids_count=5):
         self._fill_space(
             asteroids_count=asteroids_count
         )
-        # TODO посмотреть зачем корректировалась скорость перекачки
-        # honey_speed = int(theme.MAX_SPEED * self._HONEY_SPEED_FACTOR)
-        # if honey_speed < 1:
-        #     honey_speed = 1
-        # CargoBox.__load_speed = honey_speed
 
     def _get_team_pos(self, team):
         if team == 1:

@@ -17,13 +17,13 @@ class Dron(AstroUnit):
     rotate_mode = ROTATE_TURNING
     radius = 44
     auto_team = True
-    __my_mathership = None
+    __my_mothership = None
     _dead = False
     layer = 2
 
     def __init__(self, coord=None):
         super(Dron, self).__init__(coord=coord)
-        CargoBox.__init__(self, initial_cargo=0, maximum_cargo=theme.MAX_DRON_ELERIUM)
+        CargoBox.__init__(self, initial_cargo=0, maximum_cargo=theme.MAX_DRONE_ELERIUM)
         self._objects_holder = self.scene
         self.__health = theme.MAX_HEALTH
 
@@ -32,14 +32,14 @@ class Dron(AstroUnit):
         return 'dron_{}.png'.format(self.team)
 
     @property
-    def my_mathership(self):
-        if self.__my_mathership is None:
+    def my_mothership(self):
+        if self.__my_mothership is None:
             try:
-                self.__my_mathership = self.scene.get_mathership(team=self.team)
+                self.__my_mothership = self.scene.get_mothership(team=self.team)
             except IndexError:
-                raise Exception("No mathership for {} "
-                                "- check matherships_count!".format(self.__class__.__name__))
-        return self.__my_mathership
+                raise Exception("No mothership for {} "
+                                "- check motherships_count!".format(self.__class__.__name__))
+        return self.__my_mothership
 
     @property
     def meter_1(self):
@@ -62,8 +62,8 @@ class Dron(AstroUnit):
         return self.scene.asteroids
 
     @property
-    def matherships(self):
-        return self.scene.matherships
+    def motherships(self):
+        return self.scene.motherships
 
     def game_step(self):
         super(Dron, self).game_step()
@@ -77,9 +77,9 @@ class Dron(AstroUnit):
                 self.on_stop_at_asteroid(asteroid)
                 return
         else:
-            for ship in self.matherships:
+            for ship in self.motherships:
                 if ship.near(target):
-                    self.on_stop_at_mathership(ship)
+                    self.on_stop_at_mothership(ship)
                     return
         self.on_stop_at_point(target)
 
@@ -89,7 +89,7 @@ class Dron(AstroUnit):
     def on_stop_at_asteroid(self, asteroid):
         pass
 
-    def on_stop_at_mathership(self, mathership):
+    def on_stop_at_mothership(self, mothership):
         pass
 
     def move_at(self, target, speed=None):
@@ -139,13 +139,13 @@ class Asteroid(AstroUnit):
         self.turn_to(self.direction + 90, speed=0.27)
 
 
-class MatherShip(AstroUnit):
+class MotherShip(AstroUnit):
     radius = 75
     selectable = False
     counter_attrs = dict(size=22, position=(75, 135), color=(255, 255, 255))
 
     def __init__(self, coord, max_elerium, team=1):
-        super(MatherShip, self).__init__(coord=coord)
+        super(MotherShip, self).__init__(coord=coord)
         CargoBox.__init__(self, initial_cargo=0, maximum_cargo=max_elerium)
         self.__team = team
 

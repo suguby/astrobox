@@ -88,7 +88,7 @@ class StrategyApproach(Strategy):
 
     @property
     def is_finished(self):
-        # Если утсановлено условие сближения и оно ложно, заканчиваем выполненение
+        # Если усnановлено условие сближения и оно ложно, заканчиваем выполненение
         if self.__conditional_approach is not None and not self.__conditional_approach():
             return True
         return int(self.unit.distance_to(self._target_point)) <= self._target_distance
@@ -120,7 +120,6 @@ class StrategySequence(Strategy):
             self.__current_strategy = None
             return False
         self.__current_strategy = self.__strategies[strategy_id + 1]
-        # print(self.__class__.__name__+"::_next_strategy", self.__current_strategy.__class__.__name__)
         return True
 
     def __str__(self):
@@ -155,7 +154,6 @@ class StrategyApproachAndLoad(StrategySequence):
         self.__target_unit = target_unit
 
     def check_target_have_elerium(self):
-        # print (self.__class__, "::check_target_have_elerium")
         return self.__target_unit.cargo.payload > 0
 
 
@@ -205,7 +203,7 @@ class StrategyHarvesting(Strategy):
 
     def game_step(self):
         # Даем возможность переопределять выбор источника elerium'а
-        nearest_calc = self.unit if ('get_nearest_elerium_stock' in self.unit.__dict__) else self
+        nearest_calc = self.unit if hasattr(self.unit, 'get_nearest_elerium_stock') else self
         if self.__substrategy is None or self.__substrategy.is_finished:
             if self.unit.cargo.is_full:
                 self.unit.set_elerium_stock(None)
