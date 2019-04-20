@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 from astrobox.space_field import SpaceField
-from astrobox.units import DroneUnit, Unit
+from astrobox.core import Drone, Unit
 from astrobox.utils import nearest_angle_distance
 from demo.strategies import *
 from robogame_engine.geometry import Vector
 from robogame_engine.theme import theme
 
 
-class DroneUnitWithStrategies(DroneUnit):
+class DroneUnitWithStrategies(Drone):
     def __init__(self, **kwargs):
         super(DroneUnitWithStrategies, self).__init__(**kwargs)
         self.__strategies = []
@@ -135,8 +135,8 @@ class HunterDrone(GreedyDrone):
             return elerium_stocks[0]
 
         # Потом с астероидов
-        elerium_stocks = [asteriod for asteriod in self.unit.scene.asteroids if asteriod.cargo.payload > 0]
-        for drone in self.unit.teammates:
+        elerium_stocks = [asteriod for asteriod in self.scene.asteroids if asteriod.cargo.payload > 0]
+        for drone in self.teammates:
             if drone.elerium_stock is not None and \
                     not drone.cargo.is_full and \
                     drone.elerium_stock in elerium_stocks:
@@ -241,7 +241,7 @@ if __name__ == '__main__':
         speed=4,
         field=(1600, 800),
         asteroids_count=20,
-        # can_fight=False,
+        # can_fight=True,
     )
 
     teamA = [WorkerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]

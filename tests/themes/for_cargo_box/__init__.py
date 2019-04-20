@@ -2,6 +2,5 @@
 
 from astrobox.themes.default import *
 
-LOAD_SPEED = 10
-LOAD_DISTANCE = 100
-
+CARGO_TRANSITION_SPEED = 10
+CARGO_TRANSITION_DISTANCE = 100

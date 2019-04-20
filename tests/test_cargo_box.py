@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-from mock import mock
+import mock
 
-from astrobox.cargo_box import CargoBox
+from astrobox.core import Unit
+from astrobox.space_field import SpaceField
 from robogame_engine.geometry import Point
 from robogame_engine.theme import theme
 
 
-class CargoBoxVehicle(CargoBox):
+class CargoBoxVehicle(Unit):
 
     def __init__(self, coord, *args, **kwargs):
         super(CargoBoxVehicle, self).__init__(*args, **kwargs)
@@ -20,14 +21,14 @@ class CargoBoxVehicle(CargoBox):
 class TestCargo(TestCase):
 
     def setUp(self):
-        theme.set_theme_module(mod_path='tests.themes.for_cargo_box')
+        self.scene = SpaceField(theme_mod_path='tests.themes.for_cargo_box')
         self.initial_cargo = 50
         self.maximum_cargo = 100
-        self.half_load_speed = theme.LOAD_SPEED // 2
+        self.half_load_speed = theme.CARGO_TRANSITION_SPEED // 2
         self.unit1 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=self.initial_cargo, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=self.initial_cargo, max_payload=self.maximum_cargo)
         self.unit2 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=self.initial_cargo, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=self.initial_cargo, max_payload=self.maximum_cargo)
 
     def test_propeties(self):
         self.assertEqual(self.unit1.payload, self.initial_cargo)
@@ -36,13 +37,13 @@ class TestCargo(TestCase):
         self.assertEqual(self.unit1.free_space, self.maximum_cargo - self.initial_cargo)
         self.assertEqual(self.unit1.fullness, .5)
         self.unit1 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=self.maximum_cargo, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=self.maximum_cargo, max_payload=self.maximum_cargo)
         self.assertTrue(self.unit1.is_full)
         self.assertFalse(self.unit1.is_empty)
         self.assertEqual(self.unit1.free_space, 0)
         self.assertEqual(self.unit1.fullness, 1.0)
         self.unit1 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=0, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=0, max_payload=self.maximum_cargo)
         self.assertFalse(self.unit1.is_full)
         self.assertTrue(self.unit1.is_empty)
         self.assertEqual(self.unit1.free_space, self.maximum_cargo)
@@ -51,13 +52,13 @@ class TestCargo(TestCase):
     def test_load(self):
         self.unit1.load_from(self.unit2)
         self.unit1.game_step()
-        self.assertEqual(self.unit1.payload, self.initial_cargo + theme.LOAD_SPEED)
-        self.assertEqual(self.unit2.payload, self.initial_cargo - theme.LOAD_SPEED)
+        self.assertEqual(self.unit1.payload, self.initial_cargo + theme.CARGO_TRANSITION_SPEED)
+        self.assertEqual(self.unit2.payload, self.initial_cargo - theme.CARGO_TRANSITION_SPEED)
         self.assertEqual(self.unit1.on_load_complete.call_count, 0)
 
     def test_load_from_empty(self):
         self.unit2 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=0, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=0, max_payload=self.maximum_cargo)
         self.unit1.load_from(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, self.initial_cargo)
@@ -66,7 +67,7 @@ class TestCargo(TestCase):
 
     def test_load_from_nearly_empty(self):
         self.unit2 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=self.half_load_speed, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=self.half_load_speed, max_payload=self.maximum_cargo)
         self.unit1.load_from(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, self.initial_cargo + self.half_load_speed)
@@ -75,19 +76,19 @@ class TestCargo(TestCase):
 
     def test_load_to_full(self):
         self.unit1 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=self.maximum_cargo, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=self.maximum_cargo, max_payload=self.maximum_cargo)
         self.unit1.load_from(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, self.maximum_cargo)
         self.assertEqual(self.unit2.payload, self.initial_cargo)
-        self.assertEqual(self.unit1.on_load_complete.call_count, 1)
+        self.assertEqual(self.unit1.on_load_complete.call_count, 0)
 
     def test_load_to_almost_full(self):
-        half_load_speed = theme.LOAD_SPEED // 2
+        half_load_speed = theme.CARGO_TRANSITION_SPEED // 2
         self.unit1 = CargoBoxVehicle(
             coord=Point(0, 0),
-            initial_cargo=self.maximum_cargo - half_load_speed,
-            maximum_cargo=self.maximum_cargo)
+            payload=self.maximum_cargo - half_load_speed,
+            max_payload=self.maximum_cargo)
         self.unit1.load_from(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, self.maximum_cargo)
@@ -96,21 +97,21 @@ class TestCargo(TestCase):
     def test_unload(self):
         self.unit1.unload_to(self.unit2)
         self.unit1.game_step()
-        self.assertEqual(self.unit1.payload, self.initial_cargo - theme.LOAD_SPEED)
-        self.assertEqual(self.unit2.payload, self.initial_cargo + theme.LOAD_SPEED)
+        self.assertEqual(self.unit1.payload, self.initial_cargo - theme.CARGO_TRANSITION_SPEED)
+        self.assertEqual(self.unit2.payload, self.initial_cargo + theme.CARGO_TRANSITION_SPEED)
         self.assertEqual(self.unit1.on_unload_complete.call_count, 0)
 
     def test_unload_from_empty(self):
-        self.unit1 = CargoBoxVehicle(coord=Point(0, 0), initial_cargo=0, maximum_cargo=self.maximum_cargo)
+        self.unit1 = CargoBoxVehicle(coord=Point(0, 0), payload=0, max_payload=self.maximum_cargo)
         self.unit1.unload_to(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, 0)
         self.assertEqual(self.unit2.payload, self.initial_cargo)
-        self.assertEqual(self.unit1.on_unload_complete.call_count, 1)
+        self.assertEqual(self.unit1.on_unload_complete.call_count, 0)
 
     def test_unload_from_nearly_empty(self):
         self.unit1 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=self.half_load_speed, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=self.half_load_speed, max_payload=self.maximum_cargo)
         self.unit1.unload_to(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, 0)
@@ -119,7 +120,7 @@ class TestCargo(TestCase):
 
     def test_unload_to_full(self):
         self.unit2 = CargoBoxVehicle(
-            coord=Point(0, 0), initial_cargo=self.maximum_cargo, maximum_cargo=self.maximum_cargo)
+            coord=Point(0, 0), payload=self.maximum_cargo, max_payload=self.maximum_cargo)
         self.unit1.unload_to(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, self.initial_cargo)
@@ -129,8 +130,8 @@ class TestCargo(TestCase):
     def test_unload_to_almost_full(self):
         self.unit2 = CargoBoxVehicle(
             coord=Point(0, 0),
-            initial_cargo=self.maximum_cargo - self.half_load_speed,
-            maximum_cargo=self.maximum_cargo
+            payload=self.maximum_cargo - self.half_load_speed,
+            max_payload=self.maximum_cargo
         )
         self.unit1.unload_to(self.unit2)
         self.unit1.game_step()
@@ -140,17 +141,17 @@ class TestCargo(TestCase):
 
     def test_big_distance(self):
         self.unit2 = CargoBoxVehicle(
-            coord=Point(theme.LOAD_DISTANCE, 0),
-            initial_cargo=self.initial_cargo,
-            maximum_cargo=self.maximum_cargo
+            coord=Point(theme.CARGO_TRANSITION_DISTANCE, 0),
+            payload=self.initial_cargo,
+            max_payload=self.maximum_cargo
         )
         self.unit1.load_from(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, self.initial_cargo)
         self.assertEqual(self.unit2.payload, self.initial_cargo)
-        self.assertEqual(self.unit1.on_load_complete.call_count, 0)
+        self.assertEqual(self.unit1.on_load_complete.call_count, 1)
         self.unit1.unload_to(self.unit2)
         self.unit1.game_step()
         self.assertEqual(self.unit1.payload, self.initial_cargo)
         self.assertEqual(self.unit2.payload, self.initial_cargo)
-        self.assertEqual(self.unit1.on_unload_complete.call_count, 0)
+        self.assertEqual(self.unit1.on_unload_complete.call_count, 1)

@@ -9,7 +9,7 @@ class Cargo(object):
     def __init__(self, owner, payload=0, max_payload=1):
         self.__owner = owner
         if max_payload < 1:
-            raise Exception("max_payload should be greater than 0")
+            raise ValueError("max_payload should be greater than 0")
         self.__payload = min(payload, max_payload)
         self.__max_payload = max_payload
 
@@ -66,14 +66,20 @@ class CargoTransition(object):
         if self.__transition_speed < 1:
             raise Exception("transition_speed should be greater than 0")
         self.__done = False
+        self.__was_transfer = False
 
     @property
     def is_finished(self):
         return self.__done
 
+    @property
+    def was_transfer(self):
+        return self.__was_transfer
+
     def game_step(self):
+        self.__was_transfer = False
         # Ограничиваем дистанцию переноса
-        if self.cargo_to.owner.distance_to(self.cargo_from.owner) > self.__distance:
+        if self.cargo_to.owner.distance_to(self.cargo_from.owner) >= self.__distance:
             self.__done = True
             return
         # Берем максимально возможный кусок который можем переместить за такт
@@ -84,3 +90,6 @@ class CargoTransition(object):
             self.__done = True
             return
         self.__batch_processed += self.cargo_to._transfer_payload(batch, self.cargo_from)
+        self.__was_transfer = True
+        if self.cargo_from.is_empty or self.cargo_to.is_full:
+            self.__done = True

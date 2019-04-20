@@ -207,17 +207,17 @@ class StrategyHarvesting(Strategy):
         if self.__substrategy is None or self.__substrategy.is_finished:
             if self.unit.cargo.is_full:
                 self.unit.set_elerium_stock(None)
-                self.__substrategy = StrategyApproachAndUnload(unit=self.unit, target_unit=self.unit.mothership())
+                self.__substrategy = StrategyApproachAndUnload(unit=self.unit, target_unit=self.unit.mothership)
             else:
                 near_elerium_stock = nearest_calc.get_nearest_elerium_stock()
                 if near_elerium_stock is not None:
                     self.unit.set_elerium_stock(near_elerium_stock)
                     self.__substrategy = StrategyApproachAndLoad(unit=self.unit, target_unit=near_elerium_stock)
                 else:
-                    if self.unit.cargo.payload > 0 and not self.unit.mothership().cargo.is_full:
+                    if self.unit.cargo.payload > 0 and not self.unit.mothership.cargo.is_full:
                         self.unit.set_elerium_stock(None)
                         self.__substrategy = StrategyApproachAndUnload(unit=self.unit,
-                                                                       target_unit=self.unit.mothership())
+                                                                       target_unit=self.unit.mothership)
                     else:
                         # Делаем видимость загруженности дрона работой
                         self.__substrategy = StrategyApproach(unit=self.unit, target_point=self.anyAsteroid().coord)
@@ -245,7 +245,7 @@ class StrategyHunting(Strategy):
             self._hunters.append(hunter)
 
         if hunter.victim is not None \
-                and hunter.victim.distance_to(hunter.victim.mothership()) > theme.MOTHERSHIP_SAFE_DISTANCE \
+                and hunter.victim.distance_to(hunter.victim.mothership) > theme.MOTHERSHIP_SAFE_DISTANCE \
                 and hunter.victim.cargo.payload > 0:
             return hunter.victim
 
@@ -253,7 +253,7 @@ class StrategyHunting(Strategy):
         enemies = [drone for drone in hunter.scene.drones if
                    drone.team != hunter.team and drone.is_alive and drone.cargo.payload > 0]
         # Дроны оппонетнов дальше, чем дистанция до их mothership-а
-        enemies = [enemy for enemy in enemies if enemy.distance_to(enemy.mothership()) > theme.MOTHERSHIP_SAFE_DISTANCE]
+        enemies = [enemy for enemy in enemies if enemy.distance_to(enemy.mothership) > theme.MOTHERSHIP_SAFE_DISTANCE]
         for mate in self._hunters:
             if hunter != mate and mate.victim is not None and mate.victim in enemies:
                 enemies.remove(mate.victim)
@@ -269,7 +269,7 @@ class StrategyHunting(Strategy):
 
         if hunter.victim is not None and (not hunter.victim.is_alive or
                                           int(hunter.victim.distance_to(
-                                              hunter.victim.mothership())) < theme.MOTHERSHIP_HEALING_DISTANCE):
+                                              hunter.victim.mothership)) < theme.MOTHERSHIP_HEALING_DISTANCE):
             hunter._victim = None
             hunter._victim_stamp = 0
 

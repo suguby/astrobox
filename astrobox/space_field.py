@@ -2,7 +2,7 @@
 import math
 import random
 
-from astrobox.units import (MotherShip, Asteroid, DroneUnit)
+from astrobox.core import MotherShip, Asteroid, Drone
 from robogame_engine import Scene
 from robogame_engine.geometry import Point
 from robogame_engine.theme import theme
@@ -33,14 +33,15 @@ class SpaceField(Scene):
     detect_overlaps = True
     _CELL_JITTER = 0.7
 
-    def __init__(self, can_fight=False, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.__motherships = {}
         self.__asteroids = []
         self.__drones = []
         if 'theme_mod_path' not in kwargs:
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
+        if 'can_fight' in kwargs:
+            theme.DRONES_CAN_FIGHT = kwargs.pop('can_fight')
         super(SpaceField, self).__init__(*args, **kwargs)
-        theme.DRONES_CAN_FIGHT = can_fight
 
     def prepare(self, asteroids_count=5):
         self._fill_space(
@@ -145,14 +146,14 @@ class SpaceField(Scene):
 
         for drone in self.drones:
             # Перемещаем дронов к их месту спуна
-            drone.coord = drone.mothership().coord.copy()
+            drone.coord = drone.mothership.coord.copy()
 
     def get_mothership(self, team):
         return self.__motherships.get(team)
 
     @property
     def drones(self):
-        return self.get_objects_by_type(DroneUnit)
+        return self.get_objects_by_type(Drone)
 
     @property
     def asteroids(self):

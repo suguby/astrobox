@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='astrobox',
-    version='0.2.0',
+    version='1.0.0',
     packages=['astrobox', 'astrobox.themes.default'],
     include_package_data=True,
     license='BSD License',
@@ -28,6 +28,6 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
-        'robogame_engine==0.9.0',
+        'robogame_engine==1.0.0',
     ]
 )
