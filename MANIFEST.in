@@ -1,4 +1,14 @@
 include LICENSE
-include README.rst
+include README.md
 include astrobox/themes/default/*.png
 include astrobox/themes/default/asteroids/*.png
+include astrobox/themes/default/motherships/*.png
+include astrobox/themes/default/motherships/1/*.png
+include astrobox/themes/default/motherships/2/*.png
+include astrobox/themes/default/motherships/3/*.png
+include astrobox/themes/default/motherships/4/*.png
+include astrobox/themes/default/teams/*.png
+include astrobox/themes/default/teams/1/*.png
+include astrobox/themes/default/teams/2/*.png
+include astrobox/themes/default/teams/3/*.png
+include astrobox/themes/default/teams/4/*.png

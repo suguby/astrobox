@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+import setuptools
 
 
 README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
@@ -8,14 +8,15 @@ README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-setup(
+setuptools.setup(
     name='astrobox',
-    version='1.0.0',
-    packages=['astrobox', 'astrobox.themes.default'],
+    version='1.0.2',
+    packages=setuptools.find_packages(),
     include_package_data=True,
     license='BSD License',
     description='The package allows you to create Astro Robo Game for programmers.',
     long_description=README,
+    long_description_content_type="text/markdown",
     url='https://github.com/suguby/astrobox',
     author='Shandrinov Vadim',
     author_email='suguby@gmail.com',
@@ -28,6 +29,6 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
-        'robogame_engine==1.0.0',
+        'robogame_engine==1.0.1',
     ]
 )
