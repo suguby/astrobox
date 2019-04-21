@@ -144,7 +144,7 @@ class StrategySequence(Strategy):
 class StrategyApproachAndLoad(StrategySequence):
     def __init__(self, unit=None, target_unit=None, distance=None, **kwargs):
         if distance is None:
-            distance = theme.LOAD_DISTANCE
+            distance = theme.CARGO_TRANSITION_DISTANCE - 1
         super(StrategyApproachAndLoad, self).__init__(
             StrategyApproach(unit=unit, target_point=target_unit.coord, distance=distance,
                              condition=self.check_target_have_elerium),
