@@ -25,7 +25,7 @@ class Rect(object):
         self.y += dy
 
     def __str__(self):
-        return "[{}]{}x{} ({}, {})".format(id(self), self.w, self.h, self.x, self.y)
+        return "[{}] {}x{} ({}, {})".format(id(self), self.w, self.h, self.x, self.y)
 
 
 class SpaceField(Scene):
@@ -48,57 +48,52 @@ class SpaceField(Scene):
             asteroids_count=asteroids_count
         )
 
-    def _get_team_pos(self, team):
-        if team == 1:
-            return Point(90, 75)
-        elif team == 2:
-            return Point(theme.FIELD_WIDTH - 90, 75)
-        elif team == 3:
-            return Point(90, theme.FIELD_HEIGHT - 75)
+    def _get_team_pos(self, team_number):
+        radius = MotherShip.radius
+        if team_number == 1:
+            return Point(radius, radius)
+        elif team_number == 2:
+            return Point(theme.FIELD_WIDTH - radius, radius)
+        elif team_number == 3:
+            return Point(radius, theme.FIELD_HEIGHT - radius)
         else:
-            return Point(theme.FIELD_WIDTH - 90, theme.FIELD_HEIGHT - 75)
+            return Point(theme.FIELD_WIDTH - radius, theme.FIELD_HEIGHT - radius)
 
-    def _fill_space(self, asteroids_count):
+    def _fill_space(self, asteroids_count, field_reduce_rate=1.5):
         field = Rect(w=theme.FIELD_WIDTH, h=theme.FIELD_HEIGHT)
-        field.reduce(dw=MotherShip.radius * 2, dh=MotherShip.radius * 2)
+        field.reduce(dw=MotherShip.radius * field_reduce_rate, dh=MotherShip.radius * field_reduce_rate)
         if self.teams_count >= 2:
-            field.reduce(dw=MotherShip.radius * 2)
-        # if self.teams_count >= 3:
-        #    field.reduce(dh=MotherShip.radius * 2)
+            field.reduce(dw=MotherShip.radius * field_reduce_rate)
+        if self.teams_count >= 3:
+            field.reduce(dh=MotherShip.radius * field_reduce_rate)
         if field.w < MotherShip.radius or field.h < MotherShip.radius:
             raise Exception("Too little field...")
-        if theme.DEBUG:
-            print("Initial field", field)
+        self.info("Initial field {}".format(field))
 
         cells_in_width = int(math.ceil(math.sqrt(float(field.w) / field.h * asteroids_count)))
         cells_in_height = int(math.ceil(float(asteroids_count) / cells_in_width))
         cells_count = cells_in_height * cells_in_width
-        if theme.DEBUG:
-            print("Cells count", cells_count, cells_in_width, cells_in_height)
+        self.info("Cells count {} {} {}".format(cells_count, cells_in_width, cells_in_height))
         if cells_count < asteroids_count:
-            print(u"Ну я не знаю...")
+            self.warning("Warning: not enough space sells to asteroids")
 
         cell = Rect(w=int(field.w / cells_in_width), h=int(field.h / cells_in_height))
 
-        if theme.DEBUG:
-            print("Adjusted cell", cell)
+        self.info("Adjusted cell {}".format(cell))
 
         cell_numbers = [i for i in range(cells_count)]
 
         jit_box = Rect(w=int(cell.w * self._CELL_JITTER), h=int(cell.h * self._CELL_JITTER))
         jit_box.shift(dx=(cell.w - jit_box.w) // 2, dy=(cell.h - jit_box.h) // 2)
-        if theme.DEBUG:
-            print("Jit box", jit_box)
+        self.info("Jit box {}".format(jit_box))
 
         field.w = cells_in_width * cell.w + jit_box.w
         field.h = cells_in_height * cell.h + jit_box.h
-        if theme.DEBUG:
-            print("Adjusted field", field)
+        self.info("Adjusted field{}".format(field))
 
-        field.x = MotherShip.radius * 2
-        field.y = MotherShip.radius * 2
-        if theme.DEBUG:
-            print("Shifted field", field)
+        field.x = MotherShip.radius * field_reduce_rate
+        field.y = MotherShip.radius * field_reduce_rate
+        self.info("Shifted field {}".format(field))
 
         # Генерируем количество элериума для астероидов
         asteroid_payloads = []
@@ -136,13 +131,11 @@ class SpaceField(Scene):
             max_elerium = 1000
 
         for droneClass in self.teams:
-            team = self.get_team(droneClass)
-            # TODO вычислять координаты от размера игрового поля и радиуса матки
-            pos = self._get_team_pos(team)
-            mothership_class = getattr(droneClass, 'mothership_class', MotherShip)
-            mothership = mothership_class(coord=pos.copy(), max_payload=max_elerium)
-            mothership.set_team(team)
-            self.__motherships[team] = mothership
+            team_number = self.get_team(droneClass)
+            pos = self._get_team_pos(team_number=team_number)
+            mothership = MotherShip(coord=pos.copy(), max_payload=max_elerium)
+            mothership.set_team(team_number)
+            self.__motherships[team_number] = mothership
 
         for drone in self.drones:
             # Перемещаем дронов к их месту спуна

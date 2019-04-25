@@ -288,7 +288,7 @@ class Asteroid(Unit):
 
 
 class MotherShip(Unit):
-    radius = 75
+    radius = 90
     selectable = False
     counter_attrs = dict(size=22, position=(75, 135), color=(255, 255, 255))
     layer = 1
@@ -330,6 +330,10 @@ class MotherShip(Unit):
         if self.__death_animaion is None:
             self.__death_animaion = self.__DeathAnimation(self)
         return self.__death_animaion.sprite_filename()  # 'mothership_{}_crashed.png'.format(self.team)
+
+    @property
+    def meter_1(self):
+        return min(self._cargo.fullness, 1.0)
 
     @property
     def meter_2(self):
