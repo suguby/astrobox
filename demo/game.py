@@ -238,15 +238,15 @@ class DestroyerDrone(DroneUnitWithStrategies):
 if __name__ == '__main__':
     space_field = SpaceField(
         name="Space war",
-        speed=4,
+        speed=5,
         field=(1600, 800),
-        asteroids_count=20,
+        asteroids_count=30,
         # can_fight=True,
     )
 
-    teamA = [WorkerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamB = [GreedyDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamC = [HunterDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
-    teamD = [DestroyerDrone() for _ in range(theme.TEAM_DRONES_COUNT)]
+    teamA = [WorkerDrone() for _ in range(5)]
+    teamB = [GreedyDrone() for _ in range(5)]
+    teamC = [HunterDrone() for _ in range(5)]
+    teamD = [DestroyerDrone() for _ in range(5)]
 
     space_field.go()
