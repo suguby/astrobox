@@ -241,7 +241,7 @@ if __name__ == '__main__':
         speed=5,
         field=(1600, 800),
         asteroids_count=30,
-        # can_fight=True,
+        can_fight=True,
     )
 
     teamA = [WorkerDrone() for _ in range(5)]

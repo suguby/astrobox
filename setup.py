@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setuptools.setup(
     name='astrobox',
-    version='1.0.3',
+    version='1.0.4',
     packages=setuptools.find_packages(),
     include_package_data=True,
     license='BSD License',
