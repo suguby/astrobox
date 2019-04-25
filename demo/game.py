@@ -240,7 +240,7 @@ if __name__ == '__main__':
         name="Space war",
         speed=5,
         field=(1600, 800),
-        asteroids_count=30,
+        asteroids_count=10,
         # can_fight=True,
     )
 

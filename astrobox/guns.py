@@ -157,6 +157,10 @@ class Gun(object):
         if self._cooldown > 0:
             self._cooldown = max(self._cooldown - theme.PLASMAGUN_COOLDOWN_RATE, 0)
 
+    @property
+    def cooldown(self):
+        return self._cooldown
+
 
 class PlasmaProjectile(Projectile):
     """Используемый снаряд"""

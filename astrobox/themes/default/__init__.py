@@ -37,6 +37,8 @@ ASTEROID_ROTATION_SPEED = 0.27
 CARGO_TRANSITION_SPEED = 1
 CARGO_TRANSITION_DISTANCE = 10
 
+SLEEP_COUNTDOWN = 10  # тиков игры замершего обьекта до посылки ему on_wakeup
+
 # Fighting
 DRONES_CAN_FIGHT = False
 DRONE_DEAD_SPEED = 0.5

@@ -4,10 +4,17 @@ import random
 
 from robogame_engine import GameObject
 from robogame_engine.constants import ROTATE_TURNING
+from robogame_engine.events import GameEvent
 from robogame_engine.theme import theme
 
 from .guns import PlasmaGun
 from .cargo import Cargo, CargoTransition
+
+
+class EventWakeUp(GameEvent):
+
+    def handle(self, obj):
+        obj.on_wake_up()
 
 
 class Unit(GameObject):
@@ -91,6 +98,7 @@ class Drone(Unit):
     radius = 44
     auto_team = True
     layer = 2
+    sleep_attrs = ('coord', 'vector', 'payload', 'gun_cooldown')
 
     class __DeathAnimation(object):
         def __init__(self, owner):
@@ -126,6 +134,9 @@ class Drone(Unit):
         self.__angle_of_death = None
         self.__death_animaion = self.__DeathAnimation(self)
 
+        self._sleep_state = None
+        self._sleep_countdown = theme.SLEEP_COUNTDOWN
+
     @property
     def have_gun(self):
         return self._gun is not None
@@ -133,6 +144,11 @@ class Drone(Unit):
     @property
     def gun(self):
         return self._gun
+
+    @property
+    def gun_cooldown(self):
+        if self._gun:
+            return self._gun.cooldown
 
     @property
     def teammates(self):
@@ -200,6 +216,9 @@ class Drone(Unit):
         if self.have_gun:
             self.gun.game_step()
         super(Drone, self).game_step()
+        self.update_sleep_state()
+        if self.is_asleep():
+            self.add_event(EventWakeUp())
 
     def move_at(self, target, speed=None):
         if not self.is_alive:
@@ -239,6 +258,22 @@ class Drone(Unit):
 
     def on_stop_at_mothership(self, mothership):
         pass
+
+    def update_sleep_state(self):
+        new_state = '-'.join([str(getattr(self, attr)) for attr in self.sleep_attrs])
+        if self._sleep_state is None or self._sleep_state != new_state:
+            self._sleep_state = new_state
+            self._sleep_countdown = theme.SLEEP_COUNTDOWN
+        elif self._sleep_countdown > 0:
+            self._sleep_countdown -= 1
+        else:
+            self._sleep_countdown = theme.SLEEP_COUNTDOWN
+
+    def is_asleep(self):
+        return self._sleep_countdown <= 0
+
+    def on_wake_up(self):
+        self.info('Wake up, Neo!')
 
 
 class Asteroid(Unit):
