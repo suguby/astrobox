@@ -131,7 +131,7 @@ class SpaceField(Scene):
             asteroid = Asteroid(coord=pos, elerium=asteroid_payload)
             self.__asteroids.append(asteroid)
 
-        max_elerium = round(sum(asteroid_payloads) * 1.5 / theme.TEAMS_COUNT, -2)
+        max_elerium = round(sum(asteroid_payloads) * 1.5 / self.teams_count, -2)
         if max_elerium < 1000:
             max_elerium = 1000
 
