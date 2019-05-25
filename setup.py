@@ -29,6 +29,6 @@ setuptools.setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=[
-        'robogame_engine==1.0.1',
+        'robogame_engine==1.0.3',
     ]
 )

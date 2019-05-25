@@ -207,6 +207,7 @@ class RunnerDrone(DroneUnitWithStrategies):
 
 class DestroyerDrone(DroneUnitWithStrategies):
     _hunters = []
+    team = 'Destroyer'
 
     def __init__(self, **kwargs):
         super(DestroyerDrone, self).__init__(**kwargs)
@@ -235,6 +236,12 @@ class DestroyerDrone(DroneUnitWithStrategies):
                 self.append_strategy(StrategyHarvesting(unit=self))
 
 
+class CowardDrone(DestroyerDrone):
+
+    def on_born(self):
+        self.append_strategy(StrategyHarvesting(unit=self))
+
+
 if __name__ == '__main__':
     space_field = SpaceField(
         name="Space war",
@@ -251,5 +258,6 @@ if __name__ == '__main__':
     teamB = [GreedyDrone() for _ in range(DRONES_COUNT)]
     teamC = [HunterDrone() for _ in range(DRONES_COUNT)]
     teamD = [DestroyerDrone() for _ in range(DRONES_COUNT)]
+    teamD.extend(CowardDrone() for _ in range(2))
 
     space_field.go()

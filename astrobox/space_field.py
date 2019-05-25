@@ -56,18 +56,21 @@ class SpaceField(Scene):
         team_counter = Counter(drone.team for drone in self.drones)
         for team, count in team_counter.items():
             if count > self.max_drones_at_team:
-                raise TooManyDrones(f'at team {team}. Only {self.max_drones_at_team} drones available')
+                raise TooManyDrones(
+                    'at team {team}. Only {max_drones_at_team} drones available'.format(
+                        team=team, max_drones_at_team=self.max_drones_at_team
+                    ))
         self._fill_space(
             asteroids_count=asteroids_count
         )
 
     def _get_team_pos(self, team_number):
         radius = MotherShip.radius
-        if team_number == 1:
+        if team_number == 0:
             return Point(radius, radius)
-        elif team_number == 2:
+        elif team_number == 1:
             return Point(theme.FIELD_WIDTH - radius, radius)
-        elif team_number == 3:
+        elif team_number == 2:
             return Point(radius, theme.FIELD_HEIGHT - radius)
         else:
             return Point(theme.FIELD_WIDTH - radius, theme.FIELD_HEIGHT - radius)
@@ -143,19 +146,18 @@ class SpaceField(Scene):
         if max_elerium < 1000:
             max_elerium = 1000
 
-        for droneClass in self.teams:
-            team_number = self.get_team(droneClass)
-            pos = self._get_team_pos(team_number=team_number)
+        for i, team_name in enumerate(self.teams):
+            pos = self._get_team_pos(team_number=i)
             mothership = MotherShip(coord=pos.copy(), max_payload=max_elerium)
-            mothership.set_team(team_number)
-            self.__motherships[team_number] = mothership
+            mothership.set_team(team_name)
+            self.__motherships[team_name] = mothership
 
         for drone in self.drones:
             # Перемещаем дронов к их месту спуна
             drone.coord = drone.mothership.coord.copy()
 
-    def get_mothership(self, team):
-        return self.__motherships.get(team)
+    def get_mothership(self, team_name):
+        return self.__motherships.get(team_name)
 
     @property
     def drones(self):

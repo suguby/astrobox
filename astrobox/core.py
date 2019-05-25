@@ -103,9 +103,9 @@ class Drone(Unit):
     class __DeathAnimation(object):
         def __init__(self, owner):
             self._owner = owner
-            self.__sprites = ['teams/{}/blow_up_{}.png'.format(owner.team, i + 1) for i in range(3)]
+            self.__sprites = ['teams/{}/blow_up_{}.png'.format(owner.team_number, i + 1) for i in range(3)]
             self.__sprites.append('teams/any_drone_explosion.png')
-            self.__sprites.append('teams/{}/drone_crashed.png'.format(owner.team))
+            self.__sprites.append('teams/{}/drone_crashed.png'.format(owner.team_number))
             self.__animation_speed = 10  # фреймов на спрайт
             self.__animation_frame = 0  # счетчик фреймов
             self.__current_sprite = self.__sprites[0]
@@ -158,7 +158,7 @@ class Drone(Unit):
     @property
     def sprite_filename(self):
         if self.is_alive:
-            return 'teams/{}/drone.png'.format(self.team)
+            return 'teams/{}/drone.png'.format(self.team_number)
         return self.__death_animaion.sprite_filename()
 
     @property
@@ -332,9 +332,9 @@ class MotherShip(Unit):
         def __init__(self, owner):
             assert owner.team is not None
             self._owner = owner
-            self.__sprites = ['motherships/{}/blow_up_{}.png'.format(owner.team, i + 1) for i in range(2)]
+            self.__sprites = ['motherships/{}/blow_up_{}.png'.format(owner.team_number, i + 1) for i in range(2)]
             self.__sprites.append('motherships/any_mothership_explosion.png')
-            self.__sprites.append('motherships/{}/crashed.png'.format(owner.team))
+            self.__sprites.append('motherships/{}/crashed.png'.format(owner.team_number))
             self.__animation_speed = 10  # фреймов на спрайт
             self.__animation_frame = 0  # счетчик фреймов
             self.__current_sprite = self.__sprites[0]
@@ -361,10 +361,10 @@ class MotherShip(Unit):
     @property
     def sprite_filename(self):
         if self.is_alive:
-            return 'teams/{}/mothership.png'.format(self.team)
+            return 'teams/{}/mothership.png'.format(self.team_number)
         if self.__death_animaion is None:
             self.__death_animaion = self.__DeathAnimation(self)
-        return self.__death_animaion.sprite_filename()  # 'mothership_{}_crashed.png'.format(self.team)
+        return self.__death_animaion.sprite_filename()
 
     @property
     def meter_1(self):

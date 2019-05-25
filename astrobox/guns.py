@@ -239,7 +239,7 @@ class PlasmaProjectile(Projectile):
     @property
     def sprite_filename(self):
         if self.is_alive or self.attached is None:
-            return "teams/{}/projectile.png".format(self.owner.team)
+            return "teams/{}/projectile.png".format(self.owner.team_number)
         return self.attached.sprite_filename
 
     @property
