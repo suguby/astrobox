@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+
 from robogame_engine import GameObject
 from robogame_engine.constants import ROTATE_TURNING
 from robogame_engine.geometry import Vector
-from robogame_engine.theme import theme
+
+from .theme import theme
 
 
 class Projectile(GameObject):

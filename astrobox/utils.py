@@ -1,5 +1,9 @@
-from robogame_engine.geometry import Point, Vector, normalise_angle
+# -*- coding: utf-8 -*-
+
 import math
+
+from robogame_engine.geometry import Vector, normalise_angle
+
 
 def nearest_angle_distance(left, right):
     lv = Vector.from_direction(left, module=10)

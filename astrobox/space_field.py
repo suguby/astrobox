@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 import math
 import random
+from collections import Counter
 
-from astrobox.core import MotherShip, Asteroid, Drone
 from robogame_engine import Scene
 from robogame_engine.geometry import Point
-from robogame_engine.theme import theme
+
+from .core import MotherShip, Asteroid, Drone
+from .theme import theme
+
+
+class TooManyDrones(Exception):
+    pass
 
 
 class Rect(object):
@@ -41,9 +47,16 @@ class SpaceField(Scene):
             kwargs['theme_mod_path'] = 'astrobox.themes.default'
         if 'can_fight' in kwargs:
             theme.DRONES_CAN_FIGHT = kwargs.pop('can_fight')
+        self.max_drones_at_team = theme.MAX_DRONES_AT_TEAM
         super(SpaceField, self).__init__(*args, **kwargs)
 
-    def prepare(self, asteroids_count=5):
+    def prepare(self, asteroids_count=5, max_drones_at_team=None):
+        if max_drones_at_team is not None:
+            self.max_drones_at_team = max_drones_at_team
+        team_counter = Counter(drone.team for drone in self.drones)
+        for team, count in team_counter.items():
+            if count > self.max_drones_at_team:
+                raise TooManyDrones(f'at team {team}. Only {self.max_drones_at_team} drones available')
         self._fill_space(
             asteroids_count=asteroids_count
         )

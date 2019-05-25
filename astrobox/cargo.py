@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from robogame_engine.theme import theme
+
+from .theme import theme
 
 
 class Cargo(object):

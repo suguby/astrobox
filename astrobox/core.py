@@ -5,10 +5,10 @@ import random
 from robogame_engine import GameObject
 from robogame_engine.constants import ROTATE_TURNING
 from robogame_engine.events import GameEvent
-from robogame_engine.theme import theme
 
 from .guns import PlasmaGun
 from .cargo import Cargo, CargoTransition
+from .theme import theme
 
 
 class EventWakeUp(GameEvent):
