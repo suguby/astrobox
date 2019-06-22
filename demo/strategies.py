@@ -3,7 +3,7 @@ import random
 
 from robogame_engine.theme import theme
 
-from astrobox.cargo import CargoTransition
+from astrobox.cargo import CargoTransition, CargoException
 
 
 class Strategy(object):
@@ -88,7 +88,7 @@ class StrategyApproach(Strategy):
 
     @property
     def is_finished(self):
-        # Если усnановлено условие сближения и оно ложно, заканчиваем выполненение
+        # Если установлено условие сближения и оно ложно, заканчиваем выполненение
         if self.__conditional_approach is not None and not self.__conditional_approach():
             return True
         return int(self.unit.distance_to(self._target_point)) <= self._target_distance
@@ -110,7 +110,7 @@ class StrategySequence(Strategy):
     def __init__(self, *strategies, **kwargs):
         super(StrategySequence, self).__init__(**kwargs)
         self.__strategies = strategies
-        self.__current_strategy = self.__strategies[0]
+        self.__current_strategy = self.__strategies[0] if self.__strategies else None
 
     def _next_strategy(self):
         if self.__current_strategy is None:
@@ -145,12 +145,19 @@ class StrategyApproachAndLoad(StrategySequence):
     def __init__(self, unit=None, target_unit=None, distance=None, **kwargs):
         if distance is None:
             distance = theme.CARGO_TRANSITION_DISTANCE - 1
-        super(StrategyApproachAndLoad, self).__init__(
+        try:
+            self.strategies = [
             StrategyApproach(unit=unit, target_point=target_unit.coord, distance=distance,
                              condition=self.check_target_have_elerium),
             StrategyCargoLoading(CargoTransition(cargo_from=target_unit.cargo, cargo_to=unit.cargo),
                                  unit=unit, is_group_unique=True),
-            unit=unit, id="approach&load", group="approach", is_group_unique=True)
+
+            ]
+        except CargoException as exc:
+            print(exc)
+            self.strategies = []
+        super(StrategyApproachAndLoad, self).__init__(
+            *self.strategies, unit=unit, id="approach&load", group="approach", is_group_unique=True)
         self.__target_unit = target_unit
 
     def check_target_have_elerium(self):

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
-
 from .theme import theme
+
+
+class CargoException(Exception):
+    pass
 
 
 class Cargo(object):
@@ -65,8 +68,17 @@ class CargoTransition(object):
         self.__transition_limit = max(min(self.cargo_to.free_space, self.cargo_from.payload), 0)
         self.__transition_speed = theme.CARGO_TRANSITION_SPEED
         if self.__transition_speed < 1:
-            raise Exception("transition_speed should be greater than 0")
+            raise CargoException("transition_speed should be greater than 0")
         self.__done = False
+        if not theme.DRONES_CAN_FIGHT:
+            from_team = cargo_from.owner.team
+            to_team = cargo_to.owner.team
+            if from_team and to_team and from_team != to_team:
+                raise CargoException(
+                    '{}/{}->{}/{}: Impossible transfer between teams in peaceful mode'.format(
+                        cargo_from.owner.__class__.__name__, from_team,
+                        cargo_to.owner.__class__.__name__, to_team,
+                    ))
         self.__was_transfer = False
 
     @property
@@ -78,6 +90,8 @@ class CargoTransition(object):
         return self.__was_transfer
 
     def game_step(self):
+        if self.__done:
+            return
         self.__was_transfer = False
         # Ограничиваем дистанцию переноса
         if self.cargo_to.owner.distance_to(self.cargo_from.owner) >= self.__distance:

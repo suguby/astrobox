@@ -33,7 +33,7 @@ class DroneUnitWithStrategies(Drone):
                 self.__strategies.remove(s)
                 continue
             s.game_step()
-            break;
+            break
 
     @property
     def elerium_stocks(self):
@@ -248,7 +248,7 @@ if __name__ == '__main__':
         speed=5,
         field=(1600, 800),
         asteroids_count=30,
-        can_fight=True,
+        # can_fight=True,
         # max_drones_at_team=8,
     )
 
