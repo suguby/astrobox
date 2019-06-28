@@ -142,7 +142,9 @@ class SpaceField(Scene):
             asteroid = Asteroid(coord=pos, elerium=asteroid_payload)
             self.__asteroids.append(asteroid)
 
-        max_elerium = round(sum(asteroid_payloads) * 1.5 / self.teams_count, -2)
+        max_elerium = round(sum(asteroid_payloads), -2) + 100
+        if not theme.DRONES_CAN_FIGHT:
+            max_elerium = round(max_elerium * 1.5 / self.teams_count, -2)
         if max_elerium < 1000:
             max_elerium = 1000
 
