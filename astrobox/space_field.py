@@ -48,6 +48,8 @@ class SpaceField(Scene):
         if 'can_fight' in kwargs:
             theme.DRONES_CAN_FIGHT = kwargs.pop('can_fight')
         self.max_drones_at_team = theme.MAX_DRONES_AT_TEAM
+        self._prev_endgame_state = None
+        self._game_statistics_printed = False
         super(SpaceField, self).__init__(*args, **kwargs)
 
     def prepare(self, asteroids_count=5, max_drones_at_team=None):
@@ -172,3 +174,51 @@ class SpaceField(Scene):
     @property
     def motherships(self):
         return self.get_objects_by_type(MotherShip)
+
+    def _get_endgame_state(self):
+        endgame_state = dict(drones={}, bases={}, countdown=theme.GAME_OVER_TICS)
+        for team, objects in self.teams.items():
+            elerium = 0
+            for obj in objects:
+                elerium += obj.payload
+            endgame_state['drones'][team] = elerium
+        for ship in self.motherships:
+            endgame_state['bases'][ship.team] = ship.payload
+        return endgame_state
+
+    def print_game_statistics(self, game_over=False):
+        if game_over and not self._game_statistics_printed:
+            print()
+            print('After {} game steps teams collect:'.format(self._step))
+            print('-' * 35)
+            winner, max_elerium = None, 0
+            for team in sorted(self.teams):
+                elerium = self._prev_endgame_state['bases'][team] + self._prev_endgame_state['drones'][team]
+                print('{:<20}:{:>6} elerium'.format(team, elerium))
+                if max_elerium < elerium:
+                    winner, max_elerium = team, elerium
+            print('-' * 35)
+            print('Winner {:>28}'.format(winner))
+            print()
+            self._game_statistics_printed = True
+        return game_over
+
+    def is_game_over(self):
+        if self._step > 27000:
+            # абсолютный стоп, что бы там не было
+            return self.print_game_statistics(True)
+        _cur_state = self._get_endgame_state()
+        if self._prev_endgame_state is None:
+            self._prev_endgame_state = _cur_state
+            return False
+        has_drones_diff = any(self._prev_endgame_state['drones'][team] != elerium
+                              for team, elerium in _cur_state['drones'].items())
+        has_bases_diff = any(self._prev_endgame_state['bases'][team] != elerium
+                             for team, elerium in _cur_state['bases'].items())
+        if has_drones_diff or has_bases_diff:
+            self._prev_endgame_state = _cur_state
+            return False
+        self._prev_endgame_state['countdown'] -= 1
+        return self.print_game_statistics(self._prev_endgame_state['countdown'] <= 0)
+
+
