@@ -2,4 +2,4 @@
 
 AstroBox game for programmers.
 
-![screenshot one](screenshots/game_begin.png.png "Game Begin")​
+![screenshot one](screenshots/game_begin.png "Game Begin")​
