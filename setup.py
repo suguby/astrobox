@@ -8,6 +8,9 @@ README = open(os.path.join(os.path.dirname(__file__), 'README.md')).read()
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
+with open('requirements.txt') as ff:
+    install_requires = [line for line in ff.read().splitlines() if len(line) > 0]
+
 setuptools.setup(
     name='astrobox',
     version='1.3.0',
@@ -28,7 +31,5 @@ setuptools.setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    install_requires=[
-        'robogame_engine==1.1.0',
-    ]
+    install_requires=install_requires,
 )

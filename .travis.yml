@@ -1,0 +1,12 @@
+language: python
+python:
+  - "3.6"
+  - "3.7"
+install:
+  - travis_retry pip install -r requirements.txt
+  - travis_retry pip install -r tests/requirements.txt
+  - travis_retry pip install coveralls
+script:
+  pytest
+after_success:
+  - coveralls
