@@ -245,7 +245,7 @@ class CowardDrone(DestroyerDrone):
 if __name__ == '__main__':
     space_field = SpaceField(
         name="Space war",
-        speed=3,
+        speed=5,
         field=(1600, 800),
         asteroids_count=50,
         can_fight=True,
