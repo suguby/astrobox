@@ -177,13 +177,16 @@ class SpaceField(Scene):
 
     def _get_endgame_state(self):
         endgame_state = dict(drones={}, bases={}, countdown=theme.GAME_OVER_TICS)
+        if theme.DRONES_CAN_FIGHT:
+            endgame_state['health'] = {}
         for team, objects in self.teams.items():
-            elerium = 0
-            for obj in objects:
-                elerium += obj.payload
-            endgame_state['drones'][team] = elerium
+            endgame_state['drones'][team] = sum(obj.payload for obj in objects)
+            if theme.DRONES_CAN_FIGHT:
+                endgame_state['health'][team] = sum(obj.health for obj in objects)
         for ship in self.motherships:
             endgame_state['bases'][ship.team] = ship.payload
+            if theme.DRONES_CAN_FIGHT:
+                endgame_state['health'][ship.team] += ship.health
         return endgame_state
 
     def print_game_statistics(self, game_over=False):
@@ -215,7 +218,11 @@ class SpaceField(Scene):
                               for team, elerium in _cur_state['drones'].items())
         has_bases_diff = any(self._prev_endgame_state['bases'][team] != elerium
                              for team, elerium in _cur_state['bases'].items())
-        if has_drones_diff or has_bases_diff:
+        has_health_diff = False
+        if theme.DRONES_CAN_FIGHT:
+            has_health_diff = any(self._prev_endgame_state['health'][team] != health
+                                  for team, health in _cur_state['health'].items())
+        if has_drones_diff or has_bases_diff or has_health_diff:
             self._prev_endgame_state = _cur_state
             return False
         self._prev_endgame_state['countdown'] -= 1

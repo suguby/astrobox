@@ -146,6 +146,10 @@ class Drone(Unit):
         return self._gun
 
     @property
+    def health(self):
+        return self.__health
+
+    @property
     def gun_cooldown(self):
         if self._gun:
             return self._gun.cooldown
@@ -377,6 +381,11 @@ class MotherShip(Unit):
     @property
     def counter(self):
         return self.cargo.payload
+
+    # TODO аналогичный метод для дрона - спрямить
+    @property
+    def health(self):
+        return self.__health
 
     @property
     def is_alive(self):
