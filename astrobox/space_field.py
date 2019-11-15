@@ -214,7 +214,7 @@ class SpaceField(Scene):
                     if max_elerium < elerium:
                         winner, max_elerium = team, elerium
             print('-' * 35)
-            print('Winner {:>28}'.format(winner))
+            print('Winner {:>28}'.format(str(winner)))
             print()
             self._game_statistics_printed = True
         return game_over
