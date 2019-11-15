@@ -216,10 +216,10 @@ class SpaceField(Scene):
                     if max_elerium < elerium:
                         winner, max_elerium = team, elerium
             print('-' * 35)
-            print('Winner {:>28}'.format(winner))
+            print('Winner {:>28}'.format(str(winner)))
             print()
             self._game_statistics_printed = True
-        return (game_over, results)
+        return results
 
     def is_game_over(self):
         if self._step > 27000:
@@ -241,6 +241,9 @@ class SpaceField(Scene):
             self._prev_endgame_state = _cur_state
             return (False, None)
         self._prev_endgame_state['countdown'] -= 1
-        return self.print_game_statistics(self._prev_endgame_state['countdown'] <= 0)
+        is_game_over = self._prev_endgame_state['countdown'] <= 0
+        # TODO переделать - вычисляем стату и если гамовер, то принтим.
+        game_stats = self.print_game_statistics(is_game_over)
+        return is_game_over, game_stats
 
 
