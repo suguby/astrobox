@@ -48,7 +48,7 @@ class SpaceField(Scene):
         if 'can_fight' in kwargs:
             theme.DRONES_CAN_FIGHT = kwargs.pop('can_fight')
         self.max_drones_at_team = theme.MAX_DRONES_AT_TEAM
-        self._prev_endgame_state = None
+        self._prev_endgame_state = self._game_over_tics = None
         self._game_statistics_printed = False
         super(SpaceField, self).__init__(*args, **kwargs)
 
@@ -65,6 +65,9 @@ class SpaceField(Scene):
         self._fill_space(
             asteroids_count=asteroids_count
         )
+        # нужно тиков что бы дрону пролететь 3/4 экрана по диагонали
+        _screen_diagonal = (theme.FIELD_WIDTH ** 2 + theme.FIELD_HEIGHT ** 2) ** .5
+        self._game_over_tics = int((_screen_diagonal / theme.DRONE_SPEED) * .75)
 
     def _get_team_pos(self, team_number):
         radius = MotherShip.radius
@@ -176,34 +179,45 @@ class SpaceField(Scene):
         return self.get_objects_by_type(MotherShip)
 
     def _get_endgame_state(self):
-        endgame_state = dict(drones={}, bases={}, countdown=theme.GAME_OVER_TICS)
+        endgame_state = dict(drones={}, bases={}, countdown=self._game_over_tics)
+        if theme.DRONES_CAN_FIGHT:
+            endgame_state['health'] = {}
         for team, objects in self.teams.items():
-            elerium = 0
-            for obj in objects:
-                elerium += obj.payload
-            endgame_state['drones'][team] = elerium
+            endgame_state['drones'][team] = sum(obj.payload for obj in objects)
         for ship in self.motherships:
             endgame_state['bases'][ship.team] = ship.payload
+        if theme.DRONES_CAN_FIGHT:
+            # проверяем, есть ли кто живой со слабым здоровьем и что база не атакуется
+            _drone_half_health = theme.DRONE_MAX_SHIELD * .33
+            endgame_state['low_health'] = {}
+            for team, objects in self.teams.items():
+                endgame_state['low_health'][team] = any(obj.health < _drone_half_health
+                                                        for obj in objects if obj.is_alive)
+            for ship in self.motherships:
+                endgame_state['low_health'][ship.team] |= (ship.is_alive
+                                                           and ship.health < theme.MOTHERSHIP_MAX_SHIELD * .75)
         return endgame_state
 
     def print_game_statistics(self, game_over=False):
-        results = {}
         if game_over and not self._game_statistics_printed:
             print()
             print('After {} game steps teams collect:'.format(self._step))
             print('-' * 35)
             winner, max_elerium = None, 0
+            dead_teams = [ship.team for ship in self.motherships if not ship.is_alive]
             for team in sorted(self.teams):
                 elerium = self._prev_endgame_state['bases'][team] + self._prev_endgame_state['drones'][team]
-                print('{:<20}:{:>6} elerium'.format(team, elerium))
-                results[team] = elerium
-                if max_elerium < elerium:
-                    winner, max_elerium = team, elerium
+                if not theme.DRONES_CAN_FIGHT or team in dead_teams:
+                    print('{:<20}:{:>6} elerium (but dead)'.format(team, elerium))
+                else:
+                    print('{:<20}:{:>6} elerium'.format(team, elerium))
+                    if max_elerium < elerium:
+                        winner, max_elerium = team, elerium
             print('-' * 35)
             print('Winner {:>28}'.format(winner))
             print()
             self._game_statistics_printed = True
-        return (game_over, results)
+        return game_over
 
     def is_game_over(self):
         if self._step > 27000:
@@ -212,14 +226,18 @@ class SpaceField(Scene):
         _cur_state = self._get_endgame_state()
         if self._prev_endgame_state is None:
             self._prev_endgame_state = _cur_state
-            return (False, None)
+            return False
         has_drones_diff = any(self._prev_endgame_state['drones'][team] != elerium
                               for team, elerium in _cur_state['drones'].items())
         has_bases_diff = any(self._prev_endgame_state['bases'][team] != elerium
                              for team, elerium in _cur_state['bases'].items())
-        if has_drones_diff or has_bases_diff:
+        has_low_health = False
+        if theme.DRONES_CAN_FIGHT:
+            has_low_health = any(low_health
+                                 for team, low_health in _cur_state['low_health'].items())
+        if has_drones_diff or has_bases_diff or has_low_health:
             self._prev_endgame_state = _cur_state
-            return (False, None)
+            return False
         self._prev_endgame_state['countdown'] -= 1
         return self.print_game_statistics(self._prev_endgame_state['countdown'] <= 0)
 
