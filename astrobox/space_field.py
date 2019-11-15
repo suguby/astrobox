@@ -243,6 +243,7 @@ class SpaceField(Scene):
         self._prev_endgame_state['countdown'] -= 1
         is_game_over = self._prev_endgame_state['countdown'] <= 0
         # TODO переделать - вычисляем стату и если гамовер, то принтим.
+        #  вообще параметр нужен - принтить или нет
         game_stats = self.print_game_statistics(is_game_over)
         return is_game_over, game_stats
 
