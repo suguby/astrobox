@@ -199,6 +199,7 @@ class SpaceField(Scene):
         return endgame_state
 
     def print_game_statistics(self, game_over=False):
+        results = {}
         if game_over and not self._game_statistics_printed:
             print()
             print('After {} game steps teams collect:'.format(self._step))
@@ -207,6 +208,7 @@ class SpaceField(Scene):
             dead_teams = [ship.team for ship in self.motherships if not ship.is_alive]
             for team in sorted(self.teams):
                 elerium = self._prev_endgame_state['bases'][team] + self._prev_endgame_state['drones'][team]
+                results[team] = elerium
                 if not theme.DRONES_CAN_FIGHT or team in dead_teams:
                     print('{:<20}:{:>6} elerium (but dead)'.format(team, elerium))
                 else:
@@ -217,7 +219,7 @@ class SpaceField(Scene):
             print('Winner {:>28}'.format(winner))
             print()
             self._game_statistics_printed = True
-        return game_over
+        return (game_over, results)
 
     def is_game_over(self):
         if self._step > 27000:
@@ -226,7 +228,7 @@ class SpaceField(Scene):
         _cur_state = self._get_endgame_state()
         if self._prev_endgame_state is None:
             self._prev_endgame_state = _cur_state
-            return False
+            return (False, None)
         has_drones_diff = any(self._prev_endgame_state['drones'][team] != elerium
                               for team, elerium in _cur_state['drones'].items())
         has_bases_diff = any(self._prev_endgame_state['bases'][team] != elerium
@@ -237,7 +239,7 @@ class SpaceField(Scene):
                                  for team, low_health in _cur_state['low_health'].items())
         if has_drones_diff or has_bases_diff or has_low_health:
             self._prev_endgame_state = _cur_state
-            return False
+            return (False, None)
         self._prev_endgame_state['countdown'] -= 1
         return self.print_game_statistics(self._prev_endgame_state['countdown'] <= 0)
 
