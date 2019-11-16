@@ -221,7 +221,7 @@ class SpaceField(Scene):
             self._game_statistics_printed = True
         return results
 
-    def is_game_over(self):
+    def get_game_result(self):
         if self._step > 27000:
             # абсолютный стоп, что бы там не было
             return self.print_game_statistics(True)

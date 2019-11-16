@@ -247,13 +247,13 @@ if __name__ == '__main__':
         name="Space war",
         speed=5,
         field=(1600, 800),
-        asteroids_count=50,
-        can_fight=True,
+        asteroids_count=3,
+        # can_fight=True,
         max_drones_at_team=12,
         # headless=True,
     )
 
-    DRONES_COUNT = 10
+    DRONES_COUNT = 5
 
     teamA = [WorkerDrone() for _ in range(DRONES_COUNT)]
     teamB = [GreedyDrone() for _ in range(DRONES_COUNT)]
