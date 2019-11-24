@@ -179,7 +179,7 @@ class SpaceField(Scene):
     def motherships(self):
         return self.get_objects_by_type(MotherShip)
 
-    def _get_endgame_state(self):
+    def _get_game_state(self):
         game_state = defaultdict(defaultdict)
         for team, objects in self.teams.items():
             game_state[team]['drones'] = sum(obj.payload for obj in objects)
@@ -192,9 +192,9 @@ class SpaceField(Scene):
                 game_state[team]['low_health'] = any(obj.health < _drone_boundary_health
                                                      for obj in objects if obj.is_alive)
             # база жива и не атакуется
-            _ship_boundary_health = theme.MOTHERSHIP_MAX_SHIELD * .75
+            _base_boundary_health = theme.MOTHERSHIP_MAX_SHIELD * .75
             for ship in self.motherships:
-                game_state[ship.team]['low_health'] |= (ship.is_alive and ship.health < _ship_boundary_health)
+                game_state[ship.team]['low_health'] |= (ship.is_alive and ship.health < _base_boundary_health)
         game_state['countdown'] = self._game_over_tics
         return game_state
 
@@ -203,33 +203,31 @@ class SpaceField(Scene):
             # пока висит экран, статистика может печаться
             return
         print()
-        print('After {} game steps teams collect:'.format(self._step))
+        print('Rating after {} game steps:'.format(self._step))
         print('-' * 35)
         dead_teams = [ship.team for ship in self.motherships if not ship.is_alive]
         _rating = []
         for team in sorted(self.teams):
             elerium = stats[team]['base'] + stats[team]['drones']
-            mess = '{:<20}:{:>6} elerium'.format(team, elerium)
-            if theme.DRONES_CAN_FIGHT and team in dead_teams:
-                mess += ' (was eliminated)'
-            print(mess)
-            _rating.append((elerium, team))
+            _rating.append((elerium, team, team in dead_teams))
         _rating.sort()
         _rating.reverse()
-        print('-' * 35)
-        print('Winner {:>28}'.format(_rating[0][1]))
-        print()
+        for elerium, team, was_dead in _rating:
+            mess = '{:<20}:{:>6} elerium'.format(team, elerium)
+            if theme.DRONES_CAN_FIGHT and was_dead:
+                mess += ' (was eliminated)'
+            print(mess)
         self._game_statistics_printed = True
 
     def get_game_result(self):
-        _cur_state = self._get_endgame_state()
+        _cur_state = self._get_game_state()
         if self._step > 27000:
             # абсолютный стоп, что бы там не было
             self.print_game_statistics(stats=_cur_state)
-            return True, _cur_state
+            return True, self._make_game_result(_cur_state)
         if not self._prev_endgame_state:
             self._prev_endgame_state = _cur_state
-            return False, _cur_state
+            return False, {}
         has_any_diff = False
         for team in self.teams:
             has_any_diff |= self._prev_endgame_state[team]['drones'] != _cur_state[team]['drones']
@@ -240,11 +238,24 @@ class SpaceField(Scene):
                 break
         if has_any_diff:
             self._prev_endgame_state = _cur_state
-            return False, _cur_state
+            return False, {}
         self._prev_endgame_state['countdown'] -= 1
         is_game_over = self._prev_endgame_state['countdown'] <= 0
         if is_game_over:
             self.print_game_statistics(stats=_cur_state)
-        return is_game_over, _cur_state
+            return True, self._make_game_result(_cur_state)
+        return False, {}
+
+    def _make_game_result(self, _cur_state):
+        _cur_state.pop('countdown')
+        game_result = dict(game_steps=self._step)
+        game_result['collected'] = {}
+        for team, stat in _cur_state.items():
+            game_result['collected'][team] = stat['drones'] + stat['base']
+        if theme.DRONES_CAN_FIGHT:
+            game_result['dead'] = {}
+            for team, objects in self.teams.items():
+                game_result['dead'][team] = sum(1 for obj in objects if not obj.is_alive)
+        return game_result
 
 
