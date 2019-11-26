@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import math
 import random
+import uuid
 from collections import Counter, defaultdict
 
 from robogame_engine import Scene
@@ -248,7 +249,7 @@ class SpaceField(Scene):
 
     def _make_game_result(self, _cur_state):
         _cur_state.pop('countdown')
-        game_result = dict(game_steps=self._step)
+        game_result = dict(game_steps=self._step, uuid=str(uuid.uuid4()))
         game_result['collected'] = {}
         for team, stat in _cur_state.items():
             game_result['collected'][team] = stat['drones'] + stat['base']
