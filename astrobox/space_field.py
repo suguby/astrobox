@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import datetime
 import math
 import random
-from collections import Counter
+import uuid
+from collections import Counter, defaultdict
 
 from robogame_engine import Scene
 from robogame_engine.geometry import Point
@@ -48,7 +50,8 @@ class SpaceField(Scene):
         if 'can_fight' in kwargs:
             theme.DRONES_CAN_FIGHT = kwargs.pop('can_fight')
         self.max_drones_at_team = theme.MAX_DRONES_AT_TEAM
-        self._prev_endgame_state = self._game_over_tics = None
+        self._prev_endgame_state = {}
+        self._game_over_tics = 0
         self._game_statistics_printed = False
         super(SpaceField, self).__init__(*args, **kwargs)
 
@@ -178,67 +181,84 @@ class SpaceField(Scene):
     def motherships(self):
         return self.get_objects_by_type(MotherShip)
 
-    def _get_endgame_state(self):
-        endgame_state = dict(drones={}, bases={}, countdown=self._game_over_tics)
-        if theme.DRONES_CAN_FIGHT:
-            endgame_state['health'] = {}
+    def _get_game_state(self):
+        game_state = defaultdict(defaultdict)
         for team, objects in self.teams.items():
-            endgame_state['drones'][team] = sum(obj.payload for obj in objects)
+            game_state[team]['drones'] = sum(obj.payload for obj in objects)
         for ship in self.motherships:
-            endgame_state['bases'][ship.team] = ship.payload
+            game_state[ship.team]['base'] = ship.payload
         if theme.DRONES_CAN_FIGHT:
-            # проверяем, есть ли кто живой со слабым здоровьем и что база не атакуется
-            _drone_half_health = theme.DRONE_MAX_SHIELD * .33
-            endgame_state['low_health'] = {}
+            # есть ли кто живой со слабым здоровьем (может он выздоровет)
+            _drone_boundary_health = theme.DRONE_MAX_SHIELD * .33
             for team, objects in self.teams.items():
-                endgame_state['low_health'][team] = any(obj.health < _drone_half_health
-                                                        for obj in objects if obj.is_alive)
+                game_state[team]['low_health'] = any(obj.health < _drone_boundary_health
+                                                     for obj in objects if obj.is_alive)
+            # база жива и не атакуется
+            _base_boundary_health = theme.MOTHERSHIP_MAX_SHIELD * .75
             for ship in self.motherships:
-                endgame_state['low_health'][ship.team] |= (ship.is_alive
-                                                           and ship.health < theme.MOTHERSHIP_MAX_SHIELD * .75)
-        return endgame_state
+                game_state[ship.team]['low_health'] |= (ship.is_alive and ship.health < _base_boundary_health)
+        game_state['countdown'] = self._game_over_tics
+        return game_state
 
-    def print_game_statistics(self, game_over=False):
-        if game_over and not self._game_statistics_printed:
-            print()
-            print('After {} game steps teams collect:'.format(self._step))
-            print('-' * 35)
-            winner, max_elerium = None, 0
-            dead_teams = [ship.team for ship in self.motherships if not ship.is_alive]
-            for team in sorted(self.teams):
-                elerium = self._prev_endgame_state['bases'][team] + self._prev_endgame_state['drones'][team]
-                if not theme.DRONES_CAN_FIGHT or team in dead_teams:
-                    print('{:<20}:{:>6} elerium (but dead)'.format(team, elerium))
-                else:
-                    print('{:<20}:{:>6} elerium'.format(team, elerium))
-                    if max_elerium < elerium:
-                        winner, max_elerium = team, elerium
-            print('-' * 35)
-            print('Winner {:>28}'.format(winner))
-            print()
-            self._game_statistics_printed = True
-        return game_over
+    def print_game_statistics(self, stats):
+        if self._game_statistics_printed:
+            # пока висит экран, статистика может печаться
+            return
+        print()
+        print('Rating after {} game steps:'.format(self._step))
+        print('-' * 35)
+        dead_teams = [ship.team for ship in self.motherships if not ship.is_alive]
+        _rating = []
+        for team in sorted(self.teams):
+            elerium = stats[team]['base'] + stats[team]['drones']
+            _rating.append((elerium, team, team in dead_teams))
+        _rating.sort()
+        _rating.reverse()
+        for elerium, team, was_dead in _rating:
+            mess = '{:<20}:{:>6} elerium'.format(team, elerium)
+            if theme.DRONES_CAN_FIGHT and was_dead:
+                mess += ' (was eliminated)'
+            print(mess)
+        self._game_statistics_printed = True
 
-    def is_game_over(self):
+    def get_game_result(self):
+        _cur_state = self._get_game_state()
         if self._step > 27000:
             # абсолютный стоп, что бы там не было
-            return self.print_game_statistics(True)
-        _cur_state = self._get_endgame_state()
-        if self._prev_endgame_state is None:
+            self.print_game_statistics(stats=_cur_state)
+            return True, self._make_game_result(_cur_state)
+        if not self._prev_endgame_state:
             self._prev_endgame_state = _cur_state
-            return False
-        has_drones_diff = any(self._prev_endgame_state['drones'][team] != elerium
-                              for team, elerium in _cur_state['drones'].items())
-        has_bases_diff = any(self._prev_endgame_state['bases'][team] != elerium
-                             for team, elerium in _cur_state['bases'].items())
-        has_low_health = False
-        if theme.DRONES_CAN_FIGHT:
-            has_low_health = any(low_health
-                                 for team, low_health in _cur_state['low_health'].items())
-        if has_drones_diff or has_bases_diff or has_low_health:
+            return False, {}
+        has_any_diff = False
+        for team in self.teams:
+            has_any_diff |= self._prev_endgame_state[team]['drones'] != _cur_state[team]['drones']
+            has_any_diff |= self._prev_endgame_state[team]['base'] != _cur_state[team]['base']
+            if theme.DRONES_CAN_FIGHT:
+                has_any_diff |= _cur_state[team]['low_health']
+            if has_any_diff:
+                break
+        if has_any_diff:
             self._prev_endgame_state = _cur_state
-            return False
+            return False, {}
         self._prev_endgame_state['countdown'] -= 1
-        return self.print_game_statistics(self._prev_endgame_state['countdown'] <= 0)
+        is_game_over = self._prev_endgame_state['countdown'] <= 0
+        if is_game_over:
+            self.print_game_statistics(stats=_cur_state)
+            return True, self._make_game_result(_cur_state)
+        return False, {}
+
+    def _make_game_result(self, _cur_state):
+        _cur_state.pop('countdown')
+        now = datetime.datetime.now()
+        game_result = dict(game_steps=self._step, uuid=str(uuid.uuid4()), happened_at=now.strftime('%Y-%m-%d %H:%M:%S'))
+        game_result['collected'] = {}
+        for team, stat in _cur_state.items():
+            game_result['collected'][team] = stat['drones'] + stat['base']
+        if theme.DRONES_CAN_FIGHT:
+            game_result['dead'] = {}
+            for team, objects in self.teams.items():
+                game_result['dead'][team] = sum(1 for obj in objects if not obj.is_alive)
+        return game_result
 
 
