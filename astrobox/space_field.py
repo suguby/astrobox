@@ -68,9 +68,9 @@ class SpaceField(Scene):
         self._fill_space(
             asteroids_count=asteroids_count
         )
-        # нужно тиков что бы дрону пролететь 3/4 экрана по диагонали
+        # нужно тиков что бы дрону пролететь экран по диагонали
         _screen_diagonal = (theme.FIELD_WIDTH ** 2 + theme.FIELD_HEIGHT ** 2) ** .5
-        self._game_over_tics = int((_screen_diagonal / theme.DRONE_SPEED) * .75)
+        self._game_over_tics = int(_screen_diagonal / theme.DRONE_SPEED)
 
     def _get_team_pos(self, team_number):
         radius = MotherShip.radius
