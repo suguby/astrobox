@@ -13,7 +13,7 @@ with open('requirements.txt') as ff:
 
 setuptools.setup(
     name='astrobox',
-    version='1.5.0.dev1',
+    version='1.5.0',
     packages=setuptools.find_packages(),
     include_package_data=True,
     license='BSD License',
