@@ -1,6 +1,7 @@
 probe.py
 
 *.py[cod]
+.python-version
 
 # C extensions
 *.so
