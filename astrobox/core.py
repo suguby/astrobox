@@ -322,7 +322,7 @@ class Asteroid(Unit):
         # super(Asteroid, self).on_stop()
         self.turn_to(self.direction + 90, speed=theme.ASTEROID_ROTATION_SPEED)
 
-    def on_hearbeat(self):
+    def on_heartbeat(self):
         pass
 
 
@@ -401,7 +401,7 @@ class MotherShip(Unit):
     def game_step(self):
         self.__heal_taken(theme.MOTHERSHIP_SHIELD_RENEWAL_RATE)
 
-    def on_hearbeat(self):
+    def on_heartbeat(self):
         pass
 
     def on_stop(self):
