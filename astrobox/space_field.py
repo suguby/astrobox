@@ -169,7 +169,7 @@ class SpaceField(Scene):
     def game_step(self):
         super().game_step()
         for base in self.motherships:
-            if not base.is_alive():
+            if not base.is_alive:
                 continue
             for drone in self.drones:
                 if drone.team == base.team:
