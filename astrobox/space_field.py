@@ -184,19 +184,16 @@ class SpaceField(Scene):
     def _get_game_state(self):
         game_state = defaultdict(defaultdict)
         for team, objects in self.teams.items():
-            game_state[team]['drones'] = sum(obj.payload for obj in objects)
+            game_state[team]['drones'] = sum(obj.payload if obj.is_alive else 0 for obj in objects)
         for ship in self.motherships:
-            game_state[ship.team]['base'] = ship.payload
+            game_state[ship.team]['base'] = ship.payload if ship.is_alive else 0
         if theme.DRONES_CAN_FIGHT:
-            # есть ли кто живой со слабым здоровьем (может он выздоровет)
-            _drone_boundary_health = theme.DRONE_MAX_SHIELD * .33
+            # есть ли кто живой
             for team, objects in self.teams.items():
-                game_state[team]['low_health'] = any(obj.health < _drone_boundary_health
-                                                     for obj in objects if obj.is_alive)
-            # база жива и не атакуется
-            _base_boundary_health = theme.MOTHERSHIP_MAX_SHIELD * .75
+                game_state[team]['low_health'] = sum(obj.health for obj in objects if obj.is_alive)
+            # база жива
             for ship in self.motherships:
-                game_state[ship.team]['low_health'] |= (ship.is_alive and ship.health < _base_boundary_health)
+                game_state[ship.team]['low_health'] += ship.health
         game_state['countdown'] = self._game_over_tics
         return game_state
 
@@ -223,7 +220,7 @@ class SpaceField(Scene):
 
     def get_game_result(self):
         _cur_state = self._get_game_state()
-        if self._step > 27000:
+        if self._step > 17000:
             # абсолютный стоп, что бы там не было
             self.print_game_statistics(stats=_cur_state)
             return True, self._make_game_result(_cur_state)
@@ -235,7 +232,7 @@ class SpaceField(Scene):
             has_any_diff |= self._prev_endgame_state[team]['drones'] != _cur_state[team]['drones']
             has_any_diff |= self._prev_endgame_state[team]['base'] != _cur_state[team]['base']
             if theme.DRONES_CAN_FIGHT:
-                has_any_diff |= _cur_state[team]['low_health']
+                has_any_diff |= abs(self._prev_endgame_state[team]['low_health'] - _cur_state[team]['low_health']) > 10
             if has_any_diff:
                 break
         if has_any_diff:
