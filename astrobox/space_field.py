@@ -6,7 +6,7 @@ import uuid
 from collections import Counter, defaultdict
 
 from robogame_engine import Scene
-from robogame_engine.geometry import Point
+from robogame_engine.geometry import Point, Vector
 
 from .core import MotherShip, Asteroid, Drone
 from .theme import theme
@@ -99,7 +99,7 @@ class SpaceField(Scene):
         cells_count = cells_in_height * cells_in_width
         self.info("Cells count {} {} {}".format(cells_count, cells_in_width, cells_in_height))
         if cells_count < asteroids_count:
-            self.warning("Warning: not enough space sells to asteroids")
+            self.warning("Warning: not enough space cells to asteroids")
 
         cell = Rect(w=int(field.w / cells_in_width), h=int(field.h / cells_in_height))
 
@@ -165,6 +165,20 @@ class SpaceField(Scene):
         for drone in self.drones:
             # Перемещаем дронов к их месту спуна
             drone.coord = drone.mothership.coord.copy()
+
+    def game_step(self):
+        super().game_step()
+        for base in self.motherships:
+            if not base.is_alive():
+                continue
+            for drone in self.drones:
+                if drone.team == base.team:
+                    continue
+                dist = base.radius - base.distance_to(drone)
+                if dist < 0:
+                    continue
+                step_back_vector = Vector.from_points(base.coord, drone.coord, module=dist + 3)
+                drone.coord += step_back_vector
 
     def get_mothership(self, team_name):
         return self.__motherships.get(team_name)
