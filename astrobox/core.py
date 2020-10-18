@@ -243,7 +243,11 @@ class Drone(Unit):
         return self.scene.asteroids
 
     def on_stop_at_target(self, target):
-        nearest_asteroid = min(self.asteroids, key=lambda asteroid: self.distance_to(asteroid))
+        nearest_asteroid = (
+            min(self.asteroids, key=lambda asteroid: self.distance_to(asteroid))
+            if self.asteroids else
+            None
+        )
         if nearest_asteroid and self.near(nearest_asteroid):
             self.on_stop_at_asteroid(nearest_asteroid)
             return
