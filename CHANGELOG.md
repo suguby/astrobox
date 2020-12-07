@@ -1,6 +1,11 @@
 ### Changelog
 
 
+#### 1.7.0
+* FIX остановки на астероиде, когда астероиды расположены очень близко
+* BUMP robopygame_engine 1.4.2 with pygame 2.0 release
+* DEPRECATE on_hearbeat with on_heartbeat successor 
+
 #### 1.6.0
 * FIX нанесения урона базе если враг завис над ней - теперь отталкиваем врага
 * FIX base.is_alive()
