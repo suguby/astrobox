@@ -1,1 +1,1 @@
-robogame_engine==1.4.0.dev1
+robogame_engine==1.4.*
